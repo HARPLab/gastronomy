@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find spoon_perception)/launch/custom_ueye_bgr.launch"/>
+  <node ns="/camera" name="image_proc" pkg="image_proc" type="image_proc"/>
+  <include file="$(find apriltags2_ros)/launch/continuous_detection.launch"/>
+</launch>

@@ -1,0 +1,30 @@
+<launch>
+    <arg name="sim"/>
+    <arg name="calibrate_to_opti" default="false"/>
+    <arg name="world_frame_name" default="base_link"/>
+    <arg name="target_frame_name" default="camera_rgb_optical_frame"/>
+
+    <include file="$(find freenect_launch)/launch/examples/freenect-registered-xyzrgb.launch"/>
+    <include file="$(find feedbot_trajectory_logic)/launch/default.launch" unless="$(arg calibrate_to_opti)">
+      <arg name="simulate_spoon" value="true"/>
+      <arg name="calibrate_only" value="true"/>
+    </include>
+
+    <include file="$(find record_mocap)/launch/default.launch" if="$(arg calibrate_to_opti)"/> 
+
+    <node name="camera_calibration" pkg="feedbot_trajectory_logic" type="camera_calibration.py" output="screen">
+      <param name="world_frame_name" value="$(arg world_frame_name)"/>
+      <param name="target_frame_name" value="$(arg target_frame_name)"/>
+    </node>
+    <node name="interactive_calibration" pkg="feedbot_trajectory_logic" type="interactive_calibration" output="screen">
+      <param name="world_frame_name" value="$(arg target_frame_name)"/>
+    </node>
+    <node pkg="tf" type="static_transform_publisher" name="rviz_view_broadcaster" args="0 0 0 .5 .5 .5 -.5 world rviz_world 100" />
+
+  <!--https://answers.ros.org/question/60975/subscribe-to-new-jointstate-messages/-->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <rosparam param="source_list">["/domus/robot/joint_states"]</rosparam>
+  </node>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find feedbot_trajectory_logic)/config/calibration_config.rviz" /> 
+</launch>

@@ -1,0 +1,91 @@
+<?xml version="1.0" ?>
+
+<!--
+    niryo_one.srdf
+    Copyright (C) 2017 Niryo
+    All rights reserved.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!--This does not replace URDF, and is not an extension of URDF.
+    This is a format for representing semantic information about the robot structure.
+    A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="niryo_one">
+    <!-- Add an xacro arg to simulate tf_prefix -->	
+    <xacro:arg name="link_prefix" default=""/>
+
+ 
+    <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
+    <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
+    <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
+    <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
+    <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
+    <group name="arm">
+        <chain base_link="$(arg link_prefix)base_link" tip_link="$(arg link_prefix)tool_link" />
+    </group>
+        <group name="tool">
+        <link name="$(arg link_prefix)tool_link" />
+    </group> 
+    <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+    <group_state name="resting" group="arm">
+        <joint name="joint_1" value="0" />
+        <joint name="joint_2" value="0.64" />
+        <joint name="joint_3" value="-1.39" />
+        <joint name="joint_4" value="0" />
+        <joint name="joint_5" value="0" />
+        <joint name="joint_6" value="0" />
+    </group_state>
+    <group_state name="straight_up" group="arm">
+        <joint name="joint_1" value="0" />
+        <joint name="joint_2" value="0" />
+        <joint name="joint_3" value="1.57" />
+        <joint name="joint_4" value="0" />
+        <joint name="joint_5" value="0" />
+        <joint name="joint_6" value="0" />
+    </group_state>
+    <group_state name="straight_forward" group="arm">
+        <joint name="joint_1" value="0" />
+        <joint name="joint_2" value="0" />
+        <joint name="joint_3" value="0" />
+        <joint name="joint_4" value="0" />
+        <joint name="joint_5" value="0" />
+        <joint name="joint_6" value="0" />
+    </group_state>
+    <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
+    <end_effector name="tool_eef" parent_link="$(arg link_prefix)tool_link" group="tool" />
+    <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
+    <virtual_joint name="fixed_base" type="fixed" parent_frame="world" child_link="$(arg link_prefix)ground_link" />
+    <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+    <disable_collisions link1="$(arg link_prefix)arm_link" link2="$(arg link_prefix)base_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)arm_link" link2="$(arg link_prefix)elbow_link" reason="Adjacent" />
+    <disable_collisions link1="$(arg link_prefix)arm_link" link2="$(arg link_prefix)hand_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)arm_link" link2="$(arg link_prefix)shoulder_link" reason="Adjacent" />
+    <disable_collisions link1="$(arg link_prefix)arm_link" link2="$(arg link_prefix)wrist_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)arm_link" link2="$(arg link_prefix)forearm_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)base_link" link2="$(arg link_prefix)elbow_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)base_link" link2="$(arg link_prefix)shoulder_link" reason="Adjacent" />
+    <disable_collisions link1="$(arg link_prefix)elbow_link" link2="$(arg link_prefix)forearm_link" reason="Adjacent" />
+    <disable_collisions link1="$(arg link_prefix)elbow_link" link2="$(arg link_prefix)tool_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)elbow_link" link2="$(arg link_prefix)hand_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)elbow_link" link2="$(arg link_prefix)shoulder_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)elbow_link" link2="$(arg link_prefix)wrist_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)forearm_link" link2="$(arg link_prefix)tool_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)forearm_link" link2="$(arg link_prefix)hand_link" reason="Never" />
+    <disable_collisions link1="$(arg link_prefix)forearm_link" link2="$(arg link_prefix)wrist_link" reason="Adjacent" />
+    <disable_collisions link1="$(arg link_prefix)tool_link" link2="$(arg link_prefix)hand_link" reason="Adjacent" />
+    <disable_collisions link1="$(arg link_prefix)tool_link" link2="$(arg link_prefix)wrist_link" reason="Default" />
+    <disable_collisions link1="$(arg link_prefix)hand_link" link2="$(arg link_prefix)wrist_link" reason="Adjacent" />
+</robot>

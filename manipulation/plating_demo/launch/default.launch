@@ -1,0 +1,34 @@
+<launch>
+  <arg name="link_prefix" default=""/>
+  <arg name="sim"/>
+
+  <!-- this group lets you communicate with a certified original niryo robot -->
+  <group ns="niryo_one">
+    <!-- connect to or simulate a robot
+    <include file="$(find niryo_one_bringup)/launch/desktop_rviz_simulation.launch" if="$(arg sim)">
+    </include>-->
+    
+    <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+    <include file="$(find niryo_one_moveit_config)/launch/planning_context.launch">
+      <arg name="link_prefix" value="$(arg link_prefix)"/>
+      <arg name="load_robot_description" value="true"/>
+    </include>
+
+    <!-- set up a service to forward goal locations to commands to the robot -->
+    <node name="track_pose_service" pkg="feedbot_trajectory_logic" type="track_pose_service" respawn="false" output="screen">
+      <!--launch-prefix="/home/travers/run_tmux.sh">-->
+      <rosparam command="load"
+                file="$(find niryo_one_moveit_config)/config/kinematics.yaml"/>
+      <param name="update_rate_hz" type="double" value="10"/>
+      <param name="step_size_meters" type="double" value="0.03"/>
+      <param name="robot_type" type="string" value="niryo"/> <!--"custom_domus", "niryo", or "sim" !-->
+    </node>
+
+    <!-- the "logic" node that says what thing the robot should do (eg: should do some cool moves) -->
+    <node name="play_demo" pkg="plating_demo" type="run_demo.py" output="screen"> 
+    </node>
+
+    <!-- set up a service that can read in text files and create goal poses -->
+    <node name="play_trajectory_service" pkg="learn_trajectory" type="play_trajectory_server.py" output="screen"/>
+  </group>
+</launch>

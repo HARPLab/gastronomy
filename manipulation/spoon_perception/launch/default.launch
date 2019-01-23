@@ -1,0 +1,6 @@
+<launch>
+  <include file="$(find spoon_perception)/launch/custom_ueye_bgr.launch"/>
+  <node name="detect_object_service" pkg="spoon_perception" type="spoon_object_detector.py">
+    <param name="col_channel" value="H"/>
+  </node>
+</launch>

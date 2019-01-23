@@ -1,0 +1,29 @@
+<launch>
+  <arg name="simulate_spoon" default="true"/>
+  <arg name="follow_mouth" default="false"/>
+  <arg name="calibrate_only" default="false"/>
+  <arg name="just_follow_mouth" default="false"/>
+
+  <include file="$(find ur5_e_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <node name="track_pose_service" pkg="feedbot_trajectory_logic" type="track_pose_service" respawn="false" output="screen">
+    <!--launch-prefix="/home/travers/run_tmux.sh">-->
+    <rosparam command="load"
+              file="$(find ur5_e_moveit_config)/config/kinematics.yaml"/>
+    <param name="update_rate_hz" type="double" value="10"/>
+    <param name="step_size_meters" type="double" value="0.03"/>
+    <param name="robot_type" type="string" value="ur5"/>
+  </node>
+
+  <node name="spoon_feeder" pkg="feedbot_trajectory_logic" type="spoon_feeder.py" unless="$(arg calibrate_only)"> 
+    <param name="simulate_spoon" type="bool" value="$(arg simulate_spoon)"/>
+    <param name="z_height" type="double" value="0.0"/>
+    <param name="follow_mouth" type="bool" value="$(arg follow_mouth)"/>
+    <param name="mouth_point_topic" type="string" value="/tracking_face_mouth_point"/>
+    <param name="just_follow_mouth" type="string" value="$(arg just_follow_mouth)"/>
+  </node>
+
+  <node name="play_trajectory_service" pkg="feedbot_trajectory_logic" type="play_trajectory_server.py"/>
+</launch>
