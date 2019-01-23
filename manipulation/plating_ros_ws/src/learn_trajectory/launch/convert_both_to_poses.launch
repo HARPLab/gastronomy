@@ -1,0 +1,4 @@
+<launch>
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find niryo_one_description)/urdf/v1/niryo_one.urdf.xacro" />
+  <node name="convert_trajectory" pkg="learn_trajectory" type="convert_both_joints_file_to_poses_node"/>
+</launch>

@@ -1,0 +1,4 @@
+std_msgs/String pose_topic
+std_msgs/String recording_file_name 
+---
+std_msgs/Bool success

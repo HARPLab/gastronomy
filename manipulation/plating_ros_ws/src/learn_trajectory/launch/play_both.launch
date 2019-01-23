@@ -1,0 +1,74 @@
+<launch>
+  <arg name="link_prefix" default="deep_doop_"/>
+  
+  <arg name="sim"/>
+
+  <!-- the "logic" node that says what thing the robot should do (eg: should do some cool moves) -->
+  <node name="execute_trajectory_node" pkg="learn_trajectory" type="execute_both_trajectory_node.py" output="screen"> 
+    <param name="link_prefix" value="$(arg link_prefix)"/>
+    <param name="recording_file_name" value="sharpened_spoon_poses.txt"/>
+  </node>
+
+  <!-- set up a service that can read in text files and create goal poses -->
+  <node name="play_trajectory_service" pkg="learn_trajectory" type="play_both_trajectory_server.py" output="screen"/>
+
+
+  <!-- this group lets you communicate with a certified original niryo robot -->
+  <group>
+    <!-- connect to or simulate a robot -->
+    <include file="$(find niryo_one_bringup)/launch/desktop_rviz_simulation.launch" if="$(arg sim)">
+      <arg name="hardware_version" value="1" /> 
+    </include>
+    
+    <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+    <include file="$(find niryo_one_moveit_config)/launch/planning_context.launch">
+      <arg name="link_prefix" value=""/>
+      <arg name="load_robot_description" value="true"/>
+    </include>
+
+    <!-- set up a service to forward goal locations to commands to the robot -->
+    <node name="track_pose_service" pkg="feedbot_trajectory_logic" type="track_pose_service" respawn="false" output="screen">
+      <!--launch-prefix="/home/travers/run_tmux.sh">-->
+      <rosparam command="load"
+                file="$(find niryo_one_moveit_config)/config/kinematics.yaml"/>
+      <param name="update_rate_hz" type="double" value="10"/>
+      <param name="step_size_meters" type="double" value="0.03"/>
+      <param name="robot_type" type="string" value="niryo"/> <!--"custom_domus", "niryo", or "sim" !-->
+    </node>
+
+  </group>
+
+
+  <!-- this group lets you communicate with a custom domus robot -->
+  <group ns="domusromus">
+    <!-- connect to or simulate a robot -->
+    <include file="$(find niryo_one_moveit_config)/launch/move_group.launch">
+      <arg name="allow_trajectory_execution" value="false"/>
+    </include>
+ 
+    <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+    <include file="$(find niryo_one_moveit_config)/launch/planning_context.launch">
+      <arg name="link_prefix" value="$(arg link_prefix)"/>
+      <arg name="load_robot_description" value="true"/>
+    </include>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="bases_static_publisher" args="0.63 0.0 0.0 0.0 0.0 1.0 0.0 base_link $(arg link_prefix)base_link" />
+
+    <!-- set up a service to forward goal locations to commands to the robot -->
+    <node name="track_pose_service" pkg="feedbot_trajectory_logic" type="track_pose_service" respawn="false" output="screen">
+      <!--launch-prefix="/home/travers/run_tmux.sh">-->
+      <rosparam command="load"
+                file="$(find niryo_one_moveit_config)/config/kinematics.yaml"/>
+      <param name="update_rate_hz" type="double" value="10"/>
+      <param name="step_size_meters" type="double" value="0.03"/>
+      <param name="robot_type" type="string" value="custom_domus" unless="$(arg sim)"/> <!--"custom_domus", "niryo", or "sim" !-->
+      <param name="robot_type" type="string" value="sim" if="$(arg sim)"/> <!--"custom_domus", "niryo", or "sim" !-->
+      <param name="link_prefix" value="$(arg link_prefix)"/>
+    </node>
+  
+    <!-- publish the robot state (with the fancy renamed links!) as a tf -->
+    <node name="second_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
+
+  </group>
+
+</launch>
