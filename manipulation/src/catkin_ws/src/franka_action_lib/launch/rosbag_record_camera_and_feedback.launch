@@ -1,0 +1,29 @@
+<launch>
+
+  <arg name="record_cameras_and_robot_state" default="true" />
+  <arg name="record_cameras" default="false" />
+  <arg name="record_robot_state" default="false" />
+  <arg name="num_cameras" default="1" />
+  <arg name="script" default="" />
+
+ <node pkg="rosbag" type="record" name="rosbag_record_cameras_and_robot_state"
+       args=" -o /tmp/cutting_rosbag /camera/color/camera_info /camera/color/image_raw /camera/depth/camera_info /camera/depth/image_rect_raw
+       				/execute_skill_action_server_node/execute_skill/goal /execute_skill_action_server_node/execute_skill/feedback"
+       if="$(eval num_cameras == 1)" />
+
+ <node pkg="rosbag" type="record" name="rosbag_record_cameras_and_robot_state"
+       args=" -o /tmp/cutting_rosbag /camera1/color/camera_info /camera1/color/image_raw /camera1/depth/camera_info /camera1/depth/image_rect_raw 
+       				/camera2/color/camera_info /camera2/color/image_raw /camera2/depth/camera_info /camera2/depth/image_rect_raw
+       				/execute_skill_action_server_node/execute_skill/goal /execute_skill_action_server_node/execute_skill/feedback"
+       if="$(eval num_cameras == 2)" />
+
+ <node pkg="rosbag" type="record" name="rosbag_record_cameras_and_robot_state"
+       args=" -o /tmp/cutting_rosbag /camera1/color/camera_info /camera1/color/image_raw /camera1/depth/camera_info /camera1/depth/image_rect_raw 
+       				/camera2/color/camera_info /camera2/color/image_raw /camera2/depth/camera_info /camera2/depth/image_rect_raw
+       				/camera3/color/camera_info /camera3/color/image_raw /camera3/depth/camera_info /camera3/depth/image_rect_raw
+       				/execute_skill_action_server_node/execute_skill/goal /execute_skill_action_server_node/execute_skill/feedback"
+       if="$(eval num_cameras == 3)" />
+
+  <node pkg="franka_action_lib" name="script" type="$(arg script)" output="screen" />
+
+</launch>

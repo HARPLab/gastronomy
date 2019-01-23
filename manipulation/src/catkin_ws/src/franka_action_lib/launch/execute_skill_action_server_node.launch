@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="franka_action_lib" type="execute_skill_action_server_node" name="execute_skill_action_server_node" output="screen">
+    <param name="publish_frequency"                 value="10" />
+  </node>
+
+</launch>
