@@ -1,3 +1,0 @@
-std_msgs/String pose_topic
----
-std_msgs/Bool success
