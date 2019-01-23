@@ -1,0 +1,45 @@
+training:
+  # Optimizer config
+  learning_rate: 1.0e-4
+  learning_rate_decay: 0.9
+  steps_between_learning_rate_decay: 250 # decay the learning rate after this many steps
+  weight_decay: 1.0e-4
+  num_epochs: 200
+  # Dataset loader config
+  num_workers: 0 # num threads/workers for both dataset and dataset_test loading
+  compute_test_loss: True
+  compute_test_loss_rate: 5 # how often to compute the test loss
+  test_loss_num_iterations: 10 # how many images to use to compute the test loss
+  logging_rate: 10 # how often to print out
+  garbage_collect_rate: 1
+  save_rate: 500 # how often to save the network
+  batch_size: 1
+  # Datset config
+  domain_randomize: True
+  num_matching_pixels: 2500
+  sample_matches_only_off_mask: True
+  num_non_matches_per_match: 10
+  use_image_b_mask_inv: True
+  # Loss function config
+  loss_function: pixelwise_contrastive_loss # not currently used
+  # Logging config
+  logging_rate: 10 # how often to print out
+  save_rate: 500 # how often to save the network
+  logging_dir: /home/zhouxian/git/pytorch-dense-correspondence/pdc/trained_models # where to store trained models
+
+dense_correspondence_network:
+  descriptor_dimension: 32
+  image_width: 640
+  image_height: 480
+
+loss_function:
+  M_descriptor: 1.6 # margin for desciptor distance
+  M_pixel: 50 # Clamp for pixel distance
+  match_loss_weight: 1.0
+  non_match_loss_weight: 1.0
+  use_l2_pixel_loss_on_masked_non_matches: False
+  use_l2_pixel_loss_on_background_non_matches: False
+  scale_by_hard_negatives: True
+  scale_by_hard_negatives_DIFFERENT_OBJECT: True
+  alpha_triplet: 0.1
+

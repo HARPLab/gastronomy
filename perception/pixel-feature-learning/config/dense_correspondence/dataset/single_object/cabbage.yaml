@@ -1,0 +1,11 @@
+evaluation_labeled_data_path: []
+logs_root_path: /home/zhouxian/git/pytorch-dense-correspondence/pdc/logs_proto/cooking
+object_id: cabbage
+test:
+- cabbage_1
+- cabbage_2
+- cabbage_3
+train:
+- cabbage_1
+- cabbage_2
+- cabbage_3
