@@ -1,4 +1,4 @@
-# gastronomy/manipulation/plating_ros_ws/changepoint_detection
+# gastronomy/manipulation/plating/changepoint_detection
 
 This folder contains our Python implementation of a changepoint detection algorithm made available in Matlab by Ryan Turner from
 ```
