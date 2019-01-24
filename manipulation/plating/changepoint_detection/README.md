@@ -15,5 +15,5 @@ url = {http://mlg.eng.cam.ac.uk/rdturner/BOCPD.pdf}
 ```
 
 ## Usage
-The files in `gastronomy/manipulation/plating\_ros\_ws/investigations` are Jupyter notebooks (https://jupyter.org/), and show how a changepoint segmentation implementation can be used to inform the segmentation of demonstrated trajectories into trajectory components.
+The files in `gastronomy/manipulation/plating/changepoint_detection/investigations` are Jupyter notebooks (https://jupyter.org/), and show how a changepoint segmentation implementation can be used to inform the segmentation of demonstrated trajectories into trajectory components.
 
