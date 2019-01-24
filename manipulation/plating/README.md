@@ -1,4 +1,4 @@
-# gastronomy/manipulation/plating_ros_ws
+# gastronomy/manipulation/plating
 
 This folder contains two sets of code useful for plating food.
 
