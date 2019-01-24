@@ -1,6 +1,6 @@
 # gastronomy/manipulation/plating/plating_ros_ws
 
-This plating_ros_ws folder is a catkin workspace to connect to a (possibly simulated) robot and to execute from demonstrations that are used in the plating demo. It can be used with any robot that has a ROS joint position controller interface. It also includes code to project the 2D pixel location of a detected food item in the camera frame onto a known 3D plane (the table).
+This plating_ros_ws folder is a catkin workspace to connect to a (possibly simulated) robot and to execute motions based on demonstrations that are used in the plating demo. It can be used with any robot that has a ROS joint position controller interface. It also includes code to project the 2D pixel location of a detected food item in the camera frame onto a known 3D plane (the table).
 
 ## Installation
 In order to simulate the robot, please install Gazebo (http://gazebosim.org/tutorials?tut=ros_installing#Introduction)
