@@ -1,3 +1,7 @@
+# Provenance
+
+This code was made available by Niryo One (niryo.com) to control and communicate with the Niryo One robot. Modifications were made to this code by our lab in order to more smoothly control the robot
+
 # Niryo One ROS stack
 
 (Niryo One : [https://niryo.com](https://niryo.com/?utm_source=github))
