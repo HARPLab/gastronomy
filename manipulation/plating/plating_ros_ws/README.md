@@ -5,9 +5,9 @@ This plating_ros_ws folder is a catkin workspace to connect to a (possibly simul
 ## Installation
 In order to simulate the robot, please install Gazebo (http://gazebosim.org/tutorials?tut=ros_installing#Introduction)
 
-Please make a copy of the folder `gastronomy/manipulation/plating\_ros\_ws`. Within your copy of that folder (and after installing ROS and setting up wstool and rosdep) please run the following commands:
+Please make a copy of the folder `gastronomy/manipulation/plating/plating_ros_ws`. Within your copy of that folder (and after installing ROS and setting up wstool and rosdep) please run the following commands:
 
-The first set of commands will read the file plating\_ros\_ws/src/.rosinstall and will use wstool to copy third-party code used to connect to the UR5e robot. This code is located at https://github.com/dniewinski/universal\_robot.git and at https://github.com/dniewinski/universal\_robot.git. The second set of commands will install common ROS packages like MoveIt https://moveit.ros.org/install/ by using rosdep. The final set of commands compiles the catkin workspace
+The first set of commands will read the file plating_ros_ws/src/.rosinstall and will use wstool to copy third-party code used to connect to the UR5e robot. This code is located at https://github.com/dniewinski/universal\_robot.git and at https://github.com/dniewinski/universal\_robot.git. The second set of commands will install common ROS packages like MoveIt https://moveit.ros.org/install/ by using rosdep. The final set of commands compiles the catkin workspace
 ```
 cd plating_ros_ws/src
 source /opt/ros/kinetic/devel/setup.bash
