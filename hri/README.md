@@ -26,7 +26,8 @@ Running Demos
 ======
 Once these libraries and their dependencies are properly installed, they can be used to analyze videos or live webcam footage.
 
-The directory structure is as follows:
+
+### The directory structure is as follows:
     .
     ├── ...
     ├── hri                  # All HRI code and samples
@@ -39,7 +40,7 @@ The directory structure is as follows:
     │   
     └── ...
 
-For all video names passed to demo scripts, the short name of any video contained in the example-inputs folder is all that is required, not a full file path.
+> For all video names passed to demo scripts, the short name of any video contained in the example-inputs folder is all that is required, not a full file path.
 
 OpenFace Analysis
 ---------
