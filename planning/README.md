@@ -1,6 +1,6 @@
 # Planning
 
-This is a software package for running the task-switching code on a gri-world restaurant simulation.
+This is a software package for running the task-switching code on a grid-world restaurant simulation.
 
 ## Requirements
 
