@@ -1,0 +1,183 @@
+cantaloupe:cantaloupe
+seedless grapes:grapes
+mixed greens:greens
+cannellini beans:beans
+fresh mushrooms:mushrooms
+anchovy fillets:anchovy fillets
+green seedless grapes:grapes
+cooked bacon:bacon
+artichoke hearts:artichoke
+pears:pears
+fresh oregano:oregano
+ham:ham
+mixed baby greens:greens
+frozen corn:corn
+macaroni:macaroni,pasta
+jicama:jicama
+pitted black olives:olives
+whole kernel corn:corn
+bacon bits:bacon
+sun - dried tomatoes:tomatoes
+cashews:cashews
+roasted red peppers:peppers
+jalapeno pepper:peppers
+red cabbage:cabbage
+blueberries:blueberries
+ketchup:ketchup
+baby arugula:arugula,greens
+red seedless grapes:grapes
+mushrooms:mushrooms
+tortilla chips:chips
+pineapple chunks:pineapples
+spring onions:onions
+boneless skinless chicken breast halves:chicken
+feta:feta cheese,cheese
+toasted sesame seeds:sesame
+fresh broccoli:broccoli
+golden raisins:raisins
+asparagus:asparagus
+orange:oranges
+yellow bell pepper:peppers
+mangoes:mangoes
+sweet onion:onions
+frozen corn kernels:corn
+fresh mozzarella cheese:mozzarella cheese,cheese
+dried parsley:parsley,greens
+cabbage:cabbage
+mango:mangoes
+watermelon:watermelons
+sharp cheddar cheese:cheddar cheese,cheese
+Greek yogurt:yogurt
+croutons:croutons
+pasta:pasta
+ground ginger:ginger
+olives:olives
+sweet onions:onions
+ginger:ginger
+pepperoni:pepperoni
+green onion:onions
+plum tomatoes:tomatoes
+shrimp:shrimp
+cauliflower:cauliflower
+bananas:bananas
+tuna:tuna
+couscous:couscous
+crushed pineapple:pineapple
+fresh mint leaves:mint,greens
+dill pickles:pickles
+kidney beans:beans
+green olives:olives
+fresh strawberries:strawberries
+low - fat mayonnaise:mayonnaise
+English cucumbers:cucumbers
+egg:eggs
+orzo pasta:orzo,pasta
+chicken:chicken
+beets:beets
+cream cheese:cream cheese,cheese
+cooked chicken breasts:chicken
+red pepper flakes:pepper
+chicken breasts:chicken
+English cucumber:cucumbers
+almonds:almonds
+garbanzo beans:beans
+roma tomatoes:tomatoes
+plain yogurt:yogurt
+rotini pasta:pasta
+salad greens:greens
+cheese:cheese
+broccoli florets:broccoli
+elbow macaroni:macaroni,pasta
+Granny Smith apples:apples
+basil leaves:basil,greens
+frozen peas:peas
+oranges:oranges
+basil:basil,greens
+broccoli:broccoli
+light mayonnaise:mayonnaise
+fresh chives:chives,greens
+lettuce leaves:lettuce,greens
+sliced almonds:almonds
+green beans:beans
+spinach:spinach,greens
+red peppers:peppers
+hard - cooked eggs:eggs
+apple:apples
+green peppers:peppers
+mozzarella cheese:mozzarella cheese,cheese
+mandarin oranges:oranges
+fresh spinach:spinach,greens
+lemons:lemons
+corn:corn
+flat leaf parsley:parsley,greens
+shallot:shallots
+celery ribs:celery,greens
+shredded cheddar cheese:cheddar cheese,cheese
+boneless skinless chicken breasts:chicken
+goat cheese:cheese
+chickpeas:chickpeas
+fresh basil leaves:basil,greens
+baby spinach leaves:spinach,greens
+apples:apples
+chives:chives,greens
+arugula:arugula,greens
+zucchini:zucchini
+green bell peppers:peppers
+Baby Spinach:spinach,greens
+cooked chicken:chicken
+quinoa:quinoa
+capers:capers
+slivered almonds:almonds
+red potatoes:potatoes
+pine nuts:pine nuts
+cheddar cheese:cheddar cheese,cheese
+iceberg lettuce:lettuce,greens
+radishes:radishes
+raisins:raisins
+fresh dill:dill
+shallots:shallots
+carrot:carrots
+strawberries:strawberries
+blue cheese:blue cheese,cheese
+avocados:avocados
+red bell peppers:peppers
+mixed salad greens:greens
+dried cranberries:cranberries
+green bell pepper:peppers
+kalamata olives:olives
+grape tomatoes:tomatoes
+pecans:pecans
+potatoes:potatoes
+black beans:beans
+parsley:parsley,greens
+garlic:garlic
+scallions:scallions
+lemon:lemons
+lettuce:lettuce,greens
+cilantro:cilantro,greens
+walnuts:walnuts
+hard - boiled eggs:eggs
+red bell pepper:peppers
+eggs:eggs
+avocado:avocados
+fresh cilantro:cilantro,greens
+black olives:olives
+fresh parsley:parsley,greens
+parmesan cheese:parmesan cheese,cheese
+romaine lettuce:lettuce,greens
+carrots:carrots
+cucumber:cucumbers
+onion:onions
+bacon:bacon
+onions:onions
+cherry tomatoes:tomatoes
+cucumbers:cucumbers
+feta cheese:feta cheese,cheese
+red onion:onions
+garlic cloves:garlic
+garlic clove:garlic
+red onions:onions
+celery:celery,greens
+green onions:onions
+tomatoes:tomatoes
+mayonnaise:mayonnaise
