@@ -2,6 +2,7 @@
 This repository contains code for learning pixel feature in the food domain. It is adapted from the Dense Object Net code (https://github.com/RobotLocomotion/pytorch-dense-correspondence). It learns pixel embedding via learning pixel-level correspondence through two data settings:
 - images taken from multiple viewpoints in simulation (multi-view setting)
 - images augmented from realistic food images via affine transformation, pixel intensity change, color shift, etc.. (image augmentation setting)
+
 For a more detailed idea of the structure of this codebase, please refer to the official tutorial available in the Dense Object Net repository.
 
 ### 1. Setup
@@ -31,11 +32,11 @@ pip install jupyter opencv-python plyfile pandas
 ```
 
 ### 2. File structure
-```config```: this folder contains all the configuration you would need to specify for training a model.
-```docker```: you can ignore this since we are not using docker.
-```dense_correspondence```: main directory for training code.
-```modules```: here are some utility functions required for training the model.
-```pdc``` and ```data```: this folders are where we put data. You can look into the training code to see example data path.
+- ```config```: this folder contains all the configuration you would need to specify for training a model.
+- ```docker```: you can ignore this since we are not using docker.
+- ```dense_correspondence```: main directory for training code.
+- ```modules```: here are some utility functions required for training the model.
+- ```pdc``` and ```data```: this folders are where we put data. You can look into the training code to see example data path.
 
 
 ### 3. Pipeline
