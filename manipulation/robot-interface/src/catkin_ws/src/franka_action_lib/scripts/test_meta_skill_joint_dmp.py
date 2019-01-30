@@ -10,8 +10,7 @@ import numpy as np
 
 from franka_action_lib.msg import ExecuteSkillAction, ExecuteSkillGoal
 
-from skill_list import BaseSkill
-from skill_list import JointPoseWithDefaultSensorSkill, ArmRelativeMotionWithDefaultSensorSkill
+from frankapy.skill_list import BaseSkill, JointPoseDMPWithDefaultSensorSkill, ArmRelativeMotionWithDefaultSensorSkill
 
 def feedback_callback(feedback):
     print(feedback)
@@ -45,7 +44,7 @@ if __name__ == '__main__':
     print(client.get_result())
 
 
-    skill = JointPoseWithDefaultSensorSkill()
+    skill = JointPoseDMPWithDefaultSensorSkill()
     skill.add_initial_sensor_values(dmp_info['phi_j'])  # sensor values
 
     # y0 = [0.0,0.0,0.0,0.0,0.0,0.0,0.0]

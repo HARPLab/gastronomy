@@ -54,7 +54,8 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
         if not did_save_key:
             print("Dropping key from h5 file: {}".format(path + key))
 
-def read_data_as_csv(csv_file, csv_keys_to_row_idx_ord_dict=None):
+def read_data_as_csv(csv_file, csv_keys_to_row_idx_ord_dict=None,
+                     non_csv_rows_prefix=None):
     '''Read data as dictionary of arrays from csv file.'''
     if csv_keys_to_row_idx_ord_dict is None:
         csv_keys_list = ['time', 'pose_desired', 'robot_state', 'tau_j',
@@ -76,8 +77,15 @@ def read_data_as_csv(csv_file, csv_keys_to_row_idx_ord_dict=None):
         data_dict = {}
         for k in csv_keys_to_row_idx_ord_dict.keys():
             data_dict[k] = []
+        data_dict['skill_info'] = []
 
         for row in csv_reader:
+            if non_csv_rows_prefix is not None \
+                    and row[0].startswith(non_csv_rows_prefix):
+                # This is not a csv row but an info string
+                data_dict['skill_info'].append(''.join(row))
+                continue
+
             # Remote the last extra , and convert to floats.
             trajectory = [float(d) for d in row[:-1]]
             for col in csv_keys_to_row_idx_ord_dict.keys():
@@ -86,7 +94,8 @@ def read_data_as_csv(csv_file, csv_keys_to_row_idx_ord_dict=None):
 
         # Convert dictionary items to arrays.
         for k in data_dict.keys():
-            data_dict[k] = np.array(data_dict[k])
+            if k != 'skill_info':
+                data_dict[k] = np.array(data_dict[k])
 
     return data_dict
 

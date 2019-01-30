@@ -2,13 +2,13 @@
 // Created by mohit on 12/18/18.
 //
 
-#include "feedback_controller_factory.h"
+#include "iam_robolib/feedback_controller_factory.h"
 
 #include <iostream>
 
-#include "FeedbackController/custom_gain_torque_controller.h"
-#include "FeedbackController/noop_feedback_controller.h"
-#include "FeedbackController/torque_feedback_controller.h"
+#include "iam_robolib/feedback_controller/custom_gain_torque_controller.h"
+#include "iam_robolib/feedback_controller/noop_feedback_controller.h"
+#include "iam_robolib/feedback_controller/torque_feedback_controller.h"
 
 FeedbackController* FeedbackControllerFactory::getFeedbackControllerForSkill(SharedBuffer buffer){
   int feedback_controller_id = static_cast<int>(buffer[0]);

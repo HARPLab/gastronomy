@@ -17,7 +17,7 @@
   <node name="track_pose_service" pkg="feedbot_trajectory_logic" type="track_pose_service" respawn="false" output="screen">
     <!--launch-prefix="/home/travers/run_tmux.sh">-->
     <rosparam command="load"
-              file="$(find niryo_one_moveit_config)/config/kinematics.yaml"/>
+              file="$(find ur5_e_moveit_config)/config/kinematics.yaml"/>
     <param name="update_rate_hz" type="double" value="10"/>
     <param name="step_size_meters" type="double" value="0.03"/>
     <param name="robot_type" type="string" value="ur5"/> <!--"custom_domus", "niryo", "ur5", or "sim" !-->

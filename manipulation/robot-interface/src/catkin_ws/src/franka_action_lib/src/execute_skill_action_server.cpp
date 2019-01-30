@@ -51,6 +51,11 @@ namespace franka_action_lib
         break;
       }*/
 
+      ROS_INFO("get_new_skill_available = %d", shared_memory_handler_.getNewSkillAvailableFlagInSharedMemory());
+      ROS_INFO("get_done_skill_id = %d", shared_memory_handler_.getDoneSkillIdInSharedMemory());
+      ROS_INFO("get_new_skill_id = %d", shared_memory_handler_.getNewSkillIdInSharedMemory());
+
+
       // TODO fill in execution_feedback from shared memory
       feedback_ = shared_memory_handler_.getSkillFeedback();
 

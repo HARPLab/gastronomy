@@ -1,8 +1,5 @@
 <launch>
 
-  <arg name="record_cameras_and_robot_state" default="true" />
-  <arg name="record_cameras" default="false" />
-  <arg name="record_robot_state" default="false" />
   <arg name="num_cameras" default="1" />
   <arg name="script" default="" />
 
@@ -24,6 +21,6 @@
        				/execute_skill_action_server_node/execute_skill/goal /execute_skill_action_server_node/execute_skill/feedback"
        if="$(eval num_cameras == 3)" />
 
-  <node pkg="franka_action_lib" name="script" type="$(arg script)" output="screen" />
+  <!-- <node pkg="franka_action_lib" name="script" type="$(arg script)" output="screen" /> -->
 
 </launch>

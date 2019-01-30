@@ -48,6 +48,10 @@ std::string SharedMemoryInfo::getSharedMemoryNameForResults(int index) {
   }
 }
 
+std::string SharedMemoryInfo::getSharedMemoryNameForCurrentRobotState() {
+  return current_robot_state_name_;
+}
+
 std::string SharedMemoryInfo::getRunLoopInfoObjectName() {
   return run_loop_info_name_;
 }
@@ -89,6 +93,10 @@ std::string SharedMemoryInfo::getExecutionResponseMutexName(int index) {
   }
 }
 
+std::string SharedMemoryInfo::getCurrentRobotStateMutexName() {
+  return current_robot_state_mutex_name_;
+}
+
 int SharedMemoryInfo::getParameterMemorySize(int index) {
   if (index == 0) {
     return params_memory_size_0_;
@@ -110,6 +118,10 @@ int SharedMemoryInfo::getObjectMemorySize() {
 
 int SharedMemoryInfo::getExecutionResponseMemorySize() {
   return execution_response_feedback_size_ + execution_response_return_size_;
+}
+
+int SharedMemoryInfo::getCurrentRobotStateMemorySize() {
+  return current_robot_state_size_;
 }
 
 int SharedMemoryInfo::getSizeForTrajectoryParameters() {
@@ -205,4 +217,12 @@ int SharedMemoryInfo::getSizeForExecutionReturnData() {
 
 int SharedMemoryInfo::getOffsetForExecutionReturnData() {
   return execution_response_feedback_size_;
+}
+
+int SharedMemoryInfo::getSizeForCurrentRobotState() {
+  return current_robot_state_size_;
+}
+
+int SharedMemoryInfo::getOffsetForCurrentRobotState() {
+  return 0;
 }

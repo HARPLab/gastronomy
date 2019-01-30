@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.4)
-project (test_iam_robolib
+project (main_iam_robolib
   VERSION 0.0.1 
   LANGUAGES CXX
 )
@@ -19,13 +19,13 @@ add_subdirectory(iam_robolib_common)
 add_subdirectory(libfranka)
 # add_subdirectory(src/catkin_ws/src/franka_action_lib)
 
-add_executable(test_iam_robolib test_robolib.cpp)
+add_executable(main_iam_robolib main_iam_robolib.cpp)
 
-target_link_libraries(test_iam_robolib 
+target_link_libraries(main_iam_robolib 
   iam_robolib 
   iam_robolib_common
   Franka::Franka
   Eigen3::Eigen3
 )
 
-install(TARGETS test_iam_robolib DESTINATION bin)
+install(TARGETS main_iam_robolib DESTINATION bin)

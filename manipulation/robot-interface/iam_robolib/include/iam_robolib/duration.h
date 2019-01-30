@@ -1,6 +1,8 @@
 // Copyright (c) 2017 Franka Emika GmbH
 // Use of this source code is governed by the Apache-2.0 license, see LICENSE
-#pragma once
+
+#ifndef IAM_ROBOLIB_DURATION_H_
+#define IAM_ROBOLIB_DURATION_H_
 
 #include <chrono>
 #include <cstdint>
@@ -257,3 +259,5 @@ class Duration {
  * @return Result of the multiplication.
  */
 Duration operator*(uint64_t lhs, const Duration& rhs) noexcept;
+
+#endif  // IAM_ROBOLIB_DURATION_H_

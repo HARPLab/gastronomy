@@ -2,10 +2,7 @@
 // Created by mohit on 11/20/18.
 //
 
-#include "skill_info_manager.h"
-
-#include "Skills/base_skill.h"
-#include "Skills/base_meta_skill.h"
+#include "iam_robolib/skill_info_manager.h"
 
 #include <cassert>
 

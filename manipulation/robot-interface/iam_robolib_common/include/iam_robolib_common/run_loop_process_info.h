@@ -94,19 +94,24 @@ class RunLoopProcessInfo {
   */
   void set_current_meta_skill_id(int new_skill_id);
 
-/**
- * Return the id for the new skill.
- */
+ /**
+  * Return the id for the new skill.
+  */
   int get_new_skill_id();
+
+  /**
+   * Get new skill description.
+   */
+  std::string get_new_skill_description();
 
  /**
   * Return the id for the new skill.
   */
   int get_new_meta_skill_id();
 
-/**
- * Set new skill id. Written from actionlib.
- */
+ /**
+  * Set new skill id. Written from actionlib.
+  */
   void set_new_skill_id(int new_skill_id);
 
  /**
@@ -114,30 +119,36 @@ class RunLoopProcessInfo {
   */
   void set_new_meta_skill_id(int new_meta_skill_id);
 
-/**
- * Return the id for the done skill.
- */
+  /**
+   * Set new skill description. This will be logged when the skill begins.
+   */
+  void set_new_skill_description(std::string description);
+
+ /**
+  * Return the id for the done skill.
+  */
   int get_done_skill_id();
 
-/**
- * Set done skill id.
- */
+ /**
+  * Set done skill id.
+  */
   void set_done_skill_id(int done_skill_id);
 
-/**
- * Return the id for the result skill.
- */
+ /**
+  * Return the id for the result skill.
+  */
   int get_result_skill_id();
 
-/**
- * Set result skill id.
- */
+ /**
+  * Set result skill id.
+  */
   void set_result_skill_id(int result_skill_id);
 
  private:
   bool new_skill_available_{false};
   int new_skill_type_{0};
   int new_meta_skill_type_{0};
+
   bool is_running_skill_{false};
   bool skill_preempted_{false};
 
@@ -148,6 +159,8 @@ class RunLoopProcessInfo {
   int new_skill_id_{-1};
   int done_skill_id_{-1};
   int result_skill_id_{-1};
+  char new_skill_description_[1000];
+  size_t new_skill_description_len_=1;
 
   int current_meta_skill_id_{-1};
   int new_meta_skill_id_{-1};
