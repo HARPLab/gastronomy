@@ -1,5 +1,4 @@
-#include <iam_robolib/run_loop.h>
-#include <iam_robolib/duration.h>
+#include "iam_robolib/run_loop.h"
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
@@ -16,14 +15,16 @@
 
 #include <franka/exception.h>
 
-#include "Skills/base_meta_skill.h"
-#include "Skills/base_skill.h"
-#include "control_loop_data.h"
-#include "file_stream_logger.h"
-#include "Skills/gripper_open_skill.h"
-#include "Skills/joint_pose_skill.h"
-#include "Skills/joint_pose_continuous_skill.h"
-#include "Skills/save_trajectory_skill.h"
+#include "iam_robolib/duration.h"
+#include "iam_robolib/skills/base_meta_skill.h"
+#include "iam_robolib/skills/base_skill.h"
+#include "iam_robolib/robot_state_data.h"
+#include "iam_robolib/file_stream_logger.h"
+#include "iam_robolib/skills/gripper_open_skill.h"
+#include "iam_robolib/skills/joint_pose_skill.h"
+#include "iam_robolib/skills/joint_pose_continuous_skill.h"
+#include "iam_robolib/skills/save_trajectory_skill.h"
+#include "iam_robolib/skills/force_torque_skill.h"
 
 std::atomic<bool> run_loop::running_skills_{false};
 
@@ -93,7 +94,7 @@ void run_loop::start_new_skill(BaseSkill* new_skill) {
   // Generate things that are required here.
   RunLoopProcessInfo* run_loop_info = shared_memory_handler_->getRunLoopProcessInfo();
   int memory_index = run_loop_info->get_current_shared_memory_index();
-  logger_.add_info_log(string_format("Create skill from memory index: %d\n", memory_index));
+  std::cout << string_format("Create skill from memory index: %d\n", memory_index);
 
   SharedBuffer traj_buffer = shared_memory_handler_->getTrajectoryGeneratorBuffer(memory_index);
   TrajectoryGenerator *traj_generator = traj_gen_factory_.getTrajectoryGeneratorForSkill(
@@ -114,7 +115,6 @@ void run_loop::start_new_skill(BaseSkill* new_skill) {
   // Start skill, does any pre-processing if required.
   new_skill->start_skill(&robot_, traj_generator, feedback_controller, termination_handler);
 }
-
 
 void run_loop::finish_current_skill(BaseSkill* skill) {
   SkillStatus status = skill->get_current_skill_status();
@@ -160,25 +160,23 @@ void run_loop::update_process_info() {
         if (skill != nullptr && !is_executing_skill) {
           if (run_loop_info->get_done_skill_id() > current_skill_id) {
             // Make sure get done skill id is not ahead of us.
-            logger_.add_error_log(string_format("INVALID: RunLoopProcInfo has done skill id %d "
+            std::cout << string_format("INVALID: RunLoopProcInfo has done skill id %d "
                                                 " greater than current skill id %d\n",
                                                 run_loop_info->get_done_skill_id(),
-                                                current_skill_id));
+                                                current_skill_id);
           } else if (run_loop_info->get_result_skill_id() + 2 <= current_skill_id) {
             // Make sure that ActionLib has read the skill results before we overwrite them.
-            logger_.add_error_log(
-                string_format("ActionLib server has not read previous result %d. "
+            std::cout << string_format("ActionLib server has not read previous result %d. "
                               "Cannot write new result %d\n",
                               run_loop_info->get_result_skill_id(),
-                              current_skill_id));
+                              current_skill_id);
           } else if (run_loop_info->get_done_skill_id() != current_skill_id - 1) {
             // Make sure we are only updating skill sequentially.
-            logger_.add_info_log(
-                string_format("RunLoopProcInfo done skill id: %d current skill id: %d\n",
-                    run_loop_info->get_done_skill_id(), current_skill_id));
+            std::cout << string_format("RunLoopProcInfo done skill id: %d current skill id: %d\n",
+                    run_loop_info->get_done_skill_id(), current_skill_id);
           } else {
             run_loop_info->set_done_skill_id(current_skill_id);
-            logger_.add_info_log(string_format("Did set done_skill_id %d\n", current_skill_id));
+            std::cout << string_format("Did set done_skill_id %d\n", current_skill_id);
           }
         }
         process_info_requires_update_ = false;
@@ -193,6 +191,7 @@ void run_loop::update_process_info() {
           int new_skill_type = run_loop_info->get_new_skill_type();
           int new_meta_skill_id = run_loop_info->get_new_meta_skill_id();
           int new_meta_skill_type = run_loop_info->get_new_meta_skill_type();
+          std::string new_skill_description = run_loop_info->get_new_skill_description();
           std::cout << string_format("Did find new skill id: %d, type: %d meta skill: %d, type: %d\n",
               new_skill_id, new_skill_type, new_meta_skill_id, new_meta_skill_type);
 
@@ -200,13 +199,15 @@ void run_loop::update_process_info() {
           run_loop_info->set_current_skill_id(new_skill_id);
           BaseSkill *new_skill;
           if (new_skill_type == 0) {
-            new_skill = new SkillInfo(new_skill_id, new_meta_skill_id);
+            new_skill = new SkillInfo(new_skill_id, new_meta_skill_id, new_skill_description);
           } else if (new_skill_type == 1) {
-            new_skill = new GripperOpenSkill(new_skill_id, new_meta_skill_id);
+            new_skill = new GripperOpenSkill(new_skill_id, new_meta_skill_id, new_skill_description);
           } else if (new_skill_type == 2) {
-            new_skill = new JointPoseSkill(new_skill_id, new_meta_skill_id);
+            new_skill = new JointPoseSkill(new_skill_id, new_meta_skill_id, new_skill_description);
           } else if (new_skill_type == 3) {
-            new_skill = new SaveTrajectorySkill(new_skill_id, new_meta_skill_id);
+            new_skill = new SaveTrajectorySkill(new_skill_id, new_meta_skill_id, new_skill_description);
+          } else if (new_skill_type == 4) {
+            new_skill = new ForceTorqueSkill(new_skill_id, new_meta_skill_id, new_skill_description);
           } else {
               std::cout << "Incorrect skill type: " << new_skill_type << "\n";
               assert(false);
@@ -233,14 +234,15 @@ void run_loop::update_process_info() {
           // TODO(Mohit): We should lock the other memory so that ActionLibServer cannot modify it?
           run_loop_info->update_shared_memory_region();
           run_loop_info->set_new_skill_available(false);
+        } else {          
+          std::cout << "Did not get new skill\n";
         }
       }
     } catch (boost::interprocess::lock_exception) {
       // TODO(Mohit): Do something better here.
-      logger_.add_info_log("Cannot acquire lock for run loop info");
+      std:: cout << "Cannot acquire lock for run loop info";
     }
   }
-
 }
 
 void run_loop::run() {
@@ -288,7 +290,7 @@ void run_loop::run() {
 }
 
 void run_loop::setup_save_robot_state_thread() {
-  int print_rate = 10;   // The below thread will print at 10 FPS.
+  int print_rate = 100;   // The below thread will print at 10 FPS.
   print_thread_ = std::thread([&, print_rate]() {
       // Sleep to achieve the desired print rate.
       std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
@@ -298,14 +300,175 @@ void run_loop::setup_save_robot_state_thread() {
         // Try to lock data to avoid read write collisions.
         try {
           franka::RobotState robot_state = robot_.readOnce();
+          // franka::GripperState gripper_state = gripper_.readOnce();
+          // TODO(jacky): is this duration still needed?
           double duration = std::chrono::duration_cast<std::chrono::milliseconds>(
               std::chrono::steady_clock::now() - start_time).count();
+          robot_state_data_->log_pose_desired(robot_state.O_T_EE_d); // Fictitious call to log pose desired so pose_desired buffer length matches during non-skill execution
           robot_state_data_->log_robot_state(robot_state, duration / 1000.0);
-          std::cout << duration / 1000.0 << "\n";
+          // robot_state_data_->log_gripper_state(gripper_state);
+          // std::cout << duration / 1000.0 << "\n";
         } catch (const franka::InvalidOperationException& ex) {
           // Some other control thread is running let's wait and try again.
           std::cerr << "Cannot read robot state for logging. Will continue. " << ex.what() << std::endl;
         }
+      }
+  });
+}
+
+void run_loop::setup_current_robot_state_io_thread() {
+  int io_rate = 100;
+  current_robot_state_io_thread_ = std::thread([&, io_rate]() {
+      std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+
+      while (running_skills_) {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(static_cast<int>((1.0 / io_rate * 1000.0))));
+
+          if (robot_state_data_ == nullptr || robot_state_data_->log_robot_state_0_.size() == 0) continue;
+
+          // Try to lock data to avoid read write collisions.
+          
+          if (robot_state_data_->use_buffer_0) {
+            if (robot_state_data_->buffer_0_mutex_.try_lock()) {
+              if (shared_memory_handler_->getCurrentRobotStateBufferMutex()->try_lock()) {
+                  float* current_robot_state_data_buffer = shared_memory_handler_->getCurrentRobotStateBuffer();
+                  size_t buffer_idx = 0;
+                  double double_val = 0;
+                  std::array<double, 16> double_array_16;
+                  std::array<double, 7> double_array_7;
+
+                  double_array_16 = robot_state_data_->log_pose_desired_0_.back();
+                  for (size_t i = 0; i < double_array_16.size(); i++) {
+                    double_val = double_array_16[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_16 = robot_state_data_->log_robot_state_0_.back();
+                  for (size_t i = 0; i < double_array_16.size(); i++) {
+                    double_val = double_array_16[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_tau_j_0_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_d_tau_j_0_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_q_0_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_q_d_0_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_dq_0_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_val = robot_state_data_->log_control_time_0_.back();
+                  current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+
+                  if (robot_state_data_->log_gripper_width_0_.size() > 0) {
+                    double_val = robot_state_data_->log_gripper_width_0_.back();
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+
+                    double_val = robot_state_data_->log_gripper_is_grasped_0_.back() ? 1 : 0;
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  } else {
+                    current_robot_state_data_buffer[buffer_idx++] = -1.f;
+                    current_robot_state_data_buffer[buffer_idx++] = 0.f;
+                  }
+
+                  shared_memory_handler_->getCurrentRobotStateBufferMutex()->unlock();
+              }
+              robot_state_data_->buffer_0_mutex_.unlock();
+            }
+          }
+          else {
+            if (robot_state_data_->buffer_1_mutex_.try_lock()) {
+              if (shared_memory_handler_->getCurrentRobotStateBufferMutex()->try_lock()) {
+                  float* current_robot_state_data_buffer = shared_memory_handler_->getCurrentRobotStateBuffer();
+                  size_t buffer_idx = 0;
+                  double double_val = 0;
+                  std::array<double, 16> double_array_16;
+                  std::array<double, 7> double_array_7;
+
+                  double_array_16 = robot_state_data_->log_pose_desired_1_.back();
+                  for (size_t i = 0; i < double_array_16.size(); i++) {
+                    double_val = double_array_16[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_16 = robot_state_data_->log_robot_state_1_.back();
+                  for (size_t i = 0; i < double_array_16.size(); i++) {
+                    double_val = double_array_16[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_tau_j_1_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_d_tau_j_1_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_q_1_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_q_d_1_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_array_7 = robot_state_data_->log_dq_1_.back();
+                  for (size_t i = 0; i < double_array_7.size(); i++) {
+                    double_val = double_array_7[i];
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  }
+
+                  double_val = robot_state_data_->log_control_time_1_.back();
+                  current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+
+                  if (robot_state_data_->log_gripper_width_1_.size() > 0) {
+                    double_val = robot_state_data_->log_gripper_width_1_.back();
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+
+                    double_val = robot_state_data_->log_gripper_is_grasped_1_.back() ? 1 : 0;
+                    current_robot_state_data_buffer[buffer_idx++] = static_cast<float> (double_val);
+                  } else {
+                    current_robot_state_data_buffer[buffer_idx++] = -1.f;
+                    current_robot_state_data_buffer[buffer_idx++] = 0.f;
+                  }
+
+                  shared_memory_handler_->getCurrentRobotStateBufferMutex()->unlock();
+              }
+              robot_state_data_->buffer_1_mutex_.unlock();
+            }
+          }
       }
   });
 }
@@ -336,19 +499,22 @@ void run_loop::didFinishSkillInMetaSkill(BaseSkill* skill) {
 }
 
 void run_loop::setup_data_loggers() {
-  FileStreamLogger* logger = new FileStreamLogger("./control_loop_data.txt");
-  control_loop_data_->setFileStreamLogger(logger);
-  control_loop_data_->startFileLoggerThread();
-
   FileStreamLogger *robot_logger = new FileStreamLogger("./robot_state_data.txt");
-  robot_logger->write_pose_desired_ = false;
   robot_state_data_->setFileStreamLogger(robot_logger);
   robot_state_data_->startFileLoggerThread();
 }
 
+void run_loop::log_skill_info(BaseSkill* skill) {
+  std::string log_desc = string_format("Will execute skill: %d, meta_skill: %d, ",
+                                       skill->get_skill_id(), skill->get_meta_skill_id());
+  log_desc += ("desc: " + skill->get_description());
+  robot_state_data_->log_skill_info(log_desc);
+  std::cout << log_desc << "\n" << std::endl;
+};
+
 void run_loop::run_on_franka() {
   // Wait for sometime to let the client add data to the buffer
-  std::this_thread::sleep_for(std::chrono::seconds(10));
+  std::this_thread::sleep_for(std::chrono::seconds(2));
 
   std::chrono::time_point<std::chrono::high_resolution_clock> start;
   auto milli = std::chrono::milliseconds(1);
@@ -358,7 +524,10 @@ void run_loop::run_on_franka() {
   try {
     running_skills_ = true;
     setup_data_loggers();
-    setup_save_robot_state_thread();
+    setup_current_robot_state_io_thread();
+    // TODO(Mohit): This causes a weird race condition between reading the robot state and 
+    // running the control loop. It prevents iam_robolib from running when robot is in guide mode.
+    // setup_save_robot_state_thread();
 
     while (1) {
       start = std::chrono::high_resolution_clock::now();
@@ -369,14 +538,13 @@ void run_loop::run_on_franka() {
 
       // NOTE: We keep on running the last skill even if it is finished!!
       if (skill != nullptr && meta_skill != nullptr) {
-
         if (!meta_skill->isComposableSkill() && !skill->get_termination_handler()->done_) {
           // Execute skill.
-          std::cout << "Will execute skill: " << skill->get_skill_id() << ", meta skill: " <<
-            meta_skill->getMetaSkillId() << "\n" << std::endl;
-          meta_skill->execute_skill_on_franka(this, &robot_, &gripper_, control_loop_data_);
+          log_skill_info(skill);
+          meta_skill->execute_skill_on_franka(this, &robot_, &gripper_, robot_state_data_);
         } else if (meta_skill->isComposableSkill()) {
-          meta_skill->execute_skill_on_franka(this, &robot_, &gripper_, control_loop_data_);
+          log_skill_info(skill);
+          meta_skill->execute_skill_on_franka(this, &robot_, &gripper_, robot_state_data_);
         } else {
           finish_current_skill(skill);
           std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -400,19 +568,21 @@ void run_loop::run_on_franka() {
       // std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   } catch (const franka::Exception& ex) {
-
+    std::cout << "Franka exception occurred during control loop. Will exit." << std::endl;
     std::cerr << ex.what() << std::endl;
     logger_.print_error_log();
     logger_.print_warning_log();
     logger_.print_info_log();
-
   }
 
   if (print_thread_.joinable()) {
     print_thread_.join();
   }
-  if (control_loop_data_->file_logger_thread_.joinable()) {
-    control_loop_data_->file_logger_thread_.join();
+  if (current_robot_state_io_thread_.joinable()) {
+    current_robot_state_io_thread_.join();
+  }
+  if (robot_state_data_->file_logger_thread_.joinable()) {
+    robot_state_data_->file_logger_thread_.join();
   }
 }
 

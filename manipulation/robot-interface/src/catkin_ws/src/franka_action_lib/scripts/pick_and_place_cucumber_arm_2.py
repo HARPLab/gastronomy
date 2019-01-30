@@ -7,8 +7,8 @@ import actionlib
 
 from franka_action_lib.msg import ExecuteSkillAction, ExecuteSkillGoal, RobotState
 
-from skill_list import BaseSkill
-from skill_list import ArmMoveToGoalWithDefaultSensorSkill, GripperWithDefaultSensorSkill, ArmMoveToGoalContactWithDefaultSensorSkill, StayInPositionWithDefaultSensorSkill
+from frankapy.skill_list import BaseSkill
+from frankapy.skill_list import ArmMoveToGoalWithDefaultSensorSkill, GripperWithDefaultSensorSkill, ArmMoveToGoalContactWithDefaultSensorSkill, StayInPositionWithDefaultSensorSkill
 
 def feedback_callback(feedback):
     print(feedback)
@@ -19,23 +19,23 @@ def load_result_into_robot_state_msg(result):
     current_result_index = 0
 
     for i in range(16):
-        robot_state.O_T_EE[i] = result.execution_result[current_result_index]
+        robot_state.pose[i] = result.execution_result[current_result_index]
         current_result_index += 1
 
     for i in range(7):
-        robot_state.tau_J[i] = result.execution_result[current_result_index]
+        robot_state.joint_torques[i] = result.execution_result[current_result_index]
         current_result_index += 1
 
     for i in range(7):
-        robot_state.dtau_J[i] = result.execution_result[current_result_index]
+        robot_state.joint_torques_derivative[i] = result.execution_result[current_result_index]
         current_result_index += 1
 
     for i in range(7):
-        robot_state.q[i] = result.execution_result[current_result_index]
+        robot_state.joints[i] = result.execution_result[current_result_index]
         current_result_index += 1
 
     for i in range(7):
-        robot_state.dq[i] = result.execution_result[current_result_index]
+        robot_state.joint_velocities[i] = result.execution_result[current_result_index]
         current_result_index += 1
 
     return robot_state
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     # Stay in the position for a certain amount of time
     skill = StayInPositionWithDefaultSensorSkill()
     skill.add_initial_sensor_values([1, 3, 5, 7, 8])  # random
-    skill.add_trajectory_params([300.0])  # Run Time 
+    skill.add_trajectory_params([1000.0])  # Run Time 
     skill.add_feedback_controller_params([800, 50]) # translational stiffness, rotational stiffness
     goal = skill.create_goal()
 

@@ -1,7 +1,12 @@
 # Franka robot state
-
-float32[16] O_T_EE
-float32[7] tau_J
-float32[7] dtau_J
-float32[7] q
-float32[7] dq
+std_msgs/Header header
+float32[16] pose_desired
+float32[16] pose
+float32[7] joint_torques
+float32[7] joint_torques_derivative
+float32[7] joints
+float32[7] joints_desired
+float32[7] joint_velocities
+float32 time_since_skill_started
+float32 gripper_width
+bool gripper_is_grasped

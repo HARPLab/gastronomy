@@ -2,6 +2,7 @@
 #define FRANKA_ACTION_LIB_SHARED_MEMORY_HANDLER_H
 
 #include <franka_action_lib/ExecuteSkillAction.h> // Note: "Action" is appended
+#include <franka_action_lib/RobotState.h>
 
 #include "ros/ros.h" // For ROS::ERROR messages
 
@@ -41,6 +42,11 @@ namespace franka_action_lib
 
       franka_action_lib::ExecuteSkillResult getSkillResult(int skill_id);
 
+      franka_action_lib::RobotState getRobotState();
+      
+      bool getNewSkillAvailableFlagInSharedMemory();
+
+      int getNewSkillIdInSharedMemory();
 
     private:
 
@@ -60,12 +66,15 @@ namespace franka_action_lib
       boost::interprocess::interprocess_mutex *shared_execution_response_0_mutex_;
       boost::interprocess::interprocess_mutex *shared_execution_response_1_mutex_;
 
+      boost::interprocess::interprocess_mutex *shared_current_robot_state_mutex_;
+
       boost::interprocess::shared_memory_object shared_memory_object_0_;
       boost::interprocess::shared_memory_object shared_memory_object_1_;
       boost::interprocess::shared_memory_object shared_sensor_data_0_;
       boost::interprocess::shared_memory_object shared_sensor_data_1_;
       boost::interprocess::shared_memory_object shared_execution_result_0_;
       boost::interprocess::shared_memory_object shared_execution_result_1_;
+      boost::interprocess::shared_memory_object shared_current_robot_state_;
 
       boost::interprocess::mapped_region region_traj_params_0_;
       boost::interprocess::mapped_region region_feedback_controller_params_0_;
@@ -92,6 +101,8 @@ namespace franka_action_lib
       boost::interprocess::mapped_region execution_feedback_region_1_;
       boost::interprocess::mapped_region execution_result_region_1_;
 
+      boost::interprocess::mapped_region shared_current_robot_region_;
+
       float *traj_gen_buffer_0_;
       float *feedback_controller_buffer_0_;
       float *termination_buffer_0_;
@@ -116,14 +127,17 @@ namespace franka_action_lib
       float *execution_feedback_buffer_1_;
       float *execution_result_buffer_1_;
 
+      float *current_robot_state_buffer_;
+
       int getCurrentFreeSharedMemoryIndexInSharedMemoryUnprotected();
       int getCurrentSkillIdInSharedMemoryUnprotected();
       void setCurrentSkillIdInSharedMemoryUnprotected(int current_skill_id);
       int getDoneSkillIdInSharedMemoryUnprotected();
-      bool getNewSkillFlagInSharedMemoryUnprotected();
+      bool getNewSkillAvailableFlagInSharedMemoryUnprotected();
       void setNewSkillFlagInSharedMemoryUnprotected(bool new_skill_flag);
       int getNewSkillIdInSharedMemoryUnprotected();
       void setNewSkillIdInSharedMemoryUnprotected(int new_skill_id);
+      void setNewSkillDescriptionInSharedMemoryUnprotected(std::string description);
       void setNewSkillTypeInSharedMemoryUnprotected(int new_skill_type);
       void setNewMetaSkillIdInSharedMemoryUnprotected(int new_meta_skill_id);
       void setNewMetaSkillTypeInSharedMemoryUnprotected(int new_meta_skill_type);

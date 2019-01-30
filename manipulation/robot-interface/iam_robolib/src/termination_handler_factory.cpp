@@ -2,14 +2,14 @@
 // Created by mohit on 12/18/18.
 //
 
-#include "termination_handler_factory.h"
+#include "iam_robolib/termination_handler_factory.h"
 
-#include "TerminationHandler/final_joint_termination_handler.h"
-#include "TerminationHandler/final_pose_termination_handler.h"
-#include "TerminationHandler/noop_termination_handler.h"
-#include "TerminationHandler/contact_termination_handler.h"
-#include "TrajectoryGenerator/linear_trajectory_generator_with_time_and_goal_termination_handler.h"
-#include "TerminationHandler/time_termination_handler.h"
+#include "iam_robolib/termination_handler/final_joint_termination_handler.h"
+#include "iam_robolib/termination_handler/final_pose_termination_handler.h"
+#include "iam_robolib/termination_handler/noop_termination_handler.h"
+#include "iam_robolib/termination_handler/contact_termination_handler.h"
+#include "iam_robolib/termination_handler/linear_trajectory_generator_with_time_and_goal_termination_handler.h"
+#include "iam_robolib/termination_handler/time_termination_handler.h"
 
 #include <iostream>
 

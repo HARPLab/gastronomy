@@ -1,4 +1,5 @@
 int32 skill_type
+string skill_description
 int32 meta_skill_type
 int32 meta_skill_id
 

@@ -15,28 +15,59 @@ This is a software package used for controlling and learning skills on the Frank
 
 ## Installation
 
-1. Clone this repository and its submodules using the following command: `git clone --recurse-submodules https://github.com/iamlab-cmu/robot-interface.git`. 
-2. Change directory into the repository: `cd robot-interface`
-3. Then change directory into the libfranka folder: `cd libfranka`
-4. Open up the `CMakeLists.txt` file in the libfranka folder and edit it so that on line 129, option BUILD_TESTS is turned off instead of on: `option(BUILD_TESTS "Build tests" OFF)`.
-5. Make a build directory and enter it: `mkdir build && cd build`
-6. Run the following command: `cmake -DCMAKE_BUILD_TYPE=Release .. && make`
-7. After libfranka has completed building, return to the robot-interface folder: `cd ../..`
-8. Copy the cmake folder in the libfranka folder to the robot-interface folder: `cp -R libfranka/cmake .`
-9. Make a build directory and enter it: `mkdir build && cd build`
-10. Run the following command: `cmake -DCMAKE_BUILD_TYPE=Release .. && make`
-11. Once it has finished building, you should see an application named `test_iam_robolib` in the build folder.
-12. Next, we will have to build the ros node. Change directory to the ROS folder: `cd ../src/catkin_ws`
-13. Make sure that you have installed ROS Kinetic already and have added the `source /opt/ros/kinetic/setup.bash` into your `~/.bashrc` file.
-14. Run catkin_make using the command `catkin_make`.
-15. Once catkin_make has finished there should be a build and devel folder in the catkin_ws folder.
+1. Clone Repo and its Submodules:
+
+```bash
+git clone --recurse-submodules https://github.com/iamlab-cmu/robot-interface.git
+```
+All directories below are given relative to `/robot-interface`.
+
+2. Build LibFranka
+```bash
+bash make_libfranka.sh
+```
+
+3. Build iam_robolib
+```bash
+bash make_iam_robolib.sh
+```
+Once it has finished building, you should see an application named `main_iam_robolib` in the build folder.
+
+4. Build ROS Node franka_action_lib
+Make sure that you have installed ROS Kinetic already and have added the `source /opt/ros/kinetic/setup.bash` into your `~/.bashrc` file.
+
+```bash
+cd src/catkin_ws
+catkin_make
+```
+Once catkin_make has finished there should be a build and devel folder in the catkin_ws folder.
+
+5. Install FrankaPy
+```bash
+cd src/catkin_ws/src/franka_action_lib
+pip install -e .
+```
 
 ## Running on the Franka Robot
 
 1. Make sure that both the user stop and the brakes of the Franka robot have been unlocked in the Franka Desk GUI.
 2. Open up 3 separate terminals.
-3. In one terminal, navigate to the build folder in the robot-interface folder `cd /path/to/robot-interface/build/`. In the other 2 terminals, navigate to the catkin_ws folder `cd /path/to/robot-interface/src/catkin_ws`.
-4. In the two terminals inside the catkin_ws folder, source the devel/setup.bash file. `source devel/setup.bash`.
-5. In the first terminal, start the main communication program with the franka with `./test_iam_robolib`.
-6. In the second terminal, start the ros action server with the command: `roslaunch franka_action_lib execute_skill_action_server_node.launch`.
-7. Finally, in the third terminal, you can run one of the many scripts located in the folder `/path/to/robot-interface/src/catkin_ws/src/franka_action_lib/scripts` using the command `rosrun franka_action_lib ` followed by the script name. Go through the individual scripts in order to see what they do.
+
+Terminal 1:
+```bash
+bash run_iam_robolib.sh
+```
+
+Terminal 2:
+```bash
+source src/catkin_ws/devel/setup.sh
+roslaunch franka_action_lib franka_ros_interface.launch
+```
+
+Terminal 3:
+```bash
+source src/catkin_ws/devel/setup.sh
+```
+Now in terminal 3 you can run any of the scripts in `src/catkin_ws/src/examples` and `src/catkin_ws/src/scripts`.
+
+See `src/catkin_ws/src_scripts/reset_arm.py` for an example of how to use the `FrankaPy` python package.

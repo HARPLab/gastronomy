@@ -5,12 +5,12 @@ namespace franka_action_lib
 
   SharedMemoryHandler::SharedMemoryHandler() : shared_memory_info_()
   {
-    managed_shared_memory_ = boost::interprocess::managed_shared_memory(boost::interprocess::open_only,
-                                                                        shared_memory_info_.getSharedMemoryNameForObjects().c_str());
+    managed_shared_memory_ = boost::interprocess::managed_shared_memory(
+        boost::interprocess::open_only, shared_memory_info_.getSharedMemoryNameForObjects().c_str());
 
     // Get RunLoopProcessInfo from the the shared memory segment.
-    std::pair<RunLoopProcessInfo*, std::size_t> run_loop_process_info_pair = managed_shared_memory_.find<RunLoopProcessInfo>
-                                                                             (shared_memory_info_.getRunLoopInfoObjectName().c_str());
+    std::pair<RunLoopProcessInfo*, std::size_t> run_loop_process_info_pair = \
+        managed_shared_memory_.find<RunLoopProcessInfo> (shared_memory_info_.getRunLoopInfoObjectName().c_str());
     run_loop_process_info_ = run_loop_process_info_pair.first;
 
     // Make sure the process info object can be found in memory.
@@ -267,6 +267,30 @@ namespace franka_action_lib
     );
     execution_result_buffer_1_ = reinterpret_cast<float *>(execution_result_region_1_.get_address());
 
+    // Get mutex for current robot state buffer
+    std::pair<boost::interprocess::interprocess_mutex *, std::size_t> shared_current_robot_state_mutex_pair = \
+                                managed_shared_memory_.find<boost::interprocess::interprocess_mutex>
+                                (shared_memory_info_.getCurrentRobotStateMutexName().c_str());
+    shared_current_robot_state_mutex_ = shared_current_robot_state_mutex_pair.first;
+    assert(shared_current_robot_state_mutex_ != 0);
+
+    /**
+     * Open shared memory region for current robot state buffer
+     */
+    shared_current_robot_state_ = boost::interprocess::shared_memory_object(
+        boost::interprocess::open_only,
+        shared_memory_info_.getSharedMemoryNameForCurrentRobotState().c_str(),
+        boost::interprocess::read_only
+    );
+
+    shared_current_robot_region_ =  boost::interprocess::mapped_region(
+        shared_current_robot_state_,
+        boost::interprocess::read_only,
+        shared_memory_info_.getOffsetForExecutionFeedbackData(),
+        shared_memory_info_.getSizeForExecutionFeedbackData()
+    );
+    current_robot_state_buffer_ = reinterpret_cast<float *>(shared_current_robot_region_.get_address());
+
   }
 
   int SharedMemoryHandler::loadSkillParametersIntoSharedMemory(const franka_action_lib::ExecuteSkillGoalConstPtr &goal)
@@ -274,7 +298,7 @@ namespace franka_action_lib
     // Grab lock of run_loop_info_mutex_ to see if we can load the new skill parameters into the shared memory
     boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> run_loop_info_lock(*run_loop_info_mutex_);
 
-    bool new_skill_flag = getNewSkillFlagInSharedMemoryUnprotected();
+    bool new_skill_flag = getNewSkillAvailableFlagInSharedMemoryUnprotected();
 
     // Return -1 if the new_skill_flag is already set to true, which means that another new skill has already been loaded
     // into the shared memory.
@@ -328,6 +352,7 @@ namespace franka_action_lib
 
     setNewSkillIdInSharedMemoryUnprotected(new_skill_id);
     setNewSkillTypeInSharedMemoryUnprotected(goal->skill_type);
+    setNewSkillDescriptionInSharedMemoryUnprotected(goal->skill_description);
     setNewMetaSkillTypeInSharedMemoryUnprotected(goal->meta_skill_type);
     setNewMetaSkillIdInSharedMemoryUnprotected(goal->meta_skill_id);
 
@@ -460,6 +485,66 @@ namespace franka_action_lib
     // The lock of the run_loop_info_mutex_ should be released automatically
   }
 
+  franka_action_lib::RobotState SharedMemoryHandler::getRobotState()
+  {
+    franka_action_lib::RobotState robot_state;
+
+    boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> current_robot_state_lock(*shared_current_robot_state_mutex_);
+    robot_state.header.stamp = ros::Time::now();
+
+    size_t offset = 0;
+    memcpy(&robot_state.pose_desired, &current_robot_state_buffer_[offset], robot_state.pose_desired.size() * sizeof(float));
+    offset += robot_state.pose_desired.size();
+
+    memcpy(&robot_state.pose, &current_robot_state_buffer_[offset], robot_state.pose.size() * sizeof(float));
+    offset += robot_state.pose.size();
+    
+    memcpy(&robot_state.joint_torques, &current_robot_state_buffer_[offset], robot_state.joint_torques.size() * sizeof(float));
+    offset += robot_state.joint_torques.size();
+
+    memcpy(&robot_state.joint_torques_derivative, &current_robot_state_buffer_[offset], robot_state.joint_torques_derivative.size() * sizeof(float));
+    offset += robot_state.joint_torques_derivative.size();
+    
+    memcpy(&robot_state.joints, &current_robot_state_buffer_[offset], robot_state.joints.size() * sizeof(float));
+    offset += robot_state.joints.size();
+    
+    memcpy(&robot_state.joints_desired, &current_robot_state_buffer_[offset], robot_state.joints_desired.size() * sizeof(float));
+    offset += robot_state.joints_desired.size();
+    
+    memcpy(&robot_state.joint_velocities, &current_robot_state_buffer_[offset], robot_state.joint_velocities.size() * sizeof(float));
+    offset += robot_state.joint_velocities.size();
+    
+    robot_state.time_since_skill_started = current_robot_state_buffer_[offset++];
+
+    robot_state.gripper_width = current_robot_state_buffer_[offset++];
+
+    robot_state.gripper_is_grasped = current_robot_state_buffer_[offset++] == 1 ? true : false;
+
+    return robot_state;
+  }
+  
+  bool SharedMemoryHandler::getNewSkillAvailableFlagInSharedMemory()
+  {
+    // Grab the lock of the run_loop_info_mutex_
+    boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> run_loop_info_lock(*run_loop_info_mutex_);
+
+    // Return the done_skill_id
+    return getNewSkillAvailableFlagInSharedMemoryUnprotected();
+
+    // The lock of the run_loop_info_mutex_ should be released automatically
+  }
+
+  int SharedMemoryHandler::getNewSkillIdInSharedMemory()
+  {
+    // Grab the lock of the run_loop_info_mutex_
+    boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> run_loop_info_lock(*run_loop_info_mutex_);
+
+    // Return the done_skill_id
+    return getNewSkillIdInSharedMemoryUnprotected();
+
+    // The lock of the run_loop_info_mutex_ should be released automatically
+  }
+
   // ALL UNPROTECTED FUNCTIONS BELOW REQUIRE A MUTEX OVER THE RUN_LOOP_INFO
 
   int SharedMemoryHandler::getCurrentFreeSharedMemoryIndexInSharedMemoryUnprotected()
@@ -486,7 +571,7 @@ namespace franka_action_lib
     return run_loop_process_info_->get_done_skill_id();
   }
 
-  bool SharedMemoryHandler::getNewSkillFlagInSharedMemoryUnprotected()
+  bool SharedMemoryHandler::getNewSkillAvailableFlagInSharedMemoryUnprotected()
   {
     // Return the new_skill_available_flag
     return run_loop_process_info_->get_new_skill_available();
@@ -508,6 +593,12 @@ namespace franka_action_lib
   {
     // Set new_skill_id_ in run_loop_process_info_ to the input new_skill_id
     run_loop_process_info_->set_new_skill_id(new_skill_id);
+  }
+
+  void SharedMemoryHandler::setNewSkillDescriptionInSharedMemoryUnprotected(std::string description)
+  {
+    // Set new_skill_id_ in run_loop_process_info_ to the input new_skill_id
+    run_loop_process_info_->set_new_skill_description(description);
   }
 
   void SharedMemoryHandler::setNewSkillTypeInSharedMemoryUnprotected(int new_skill_type)
@@ -536,7 +627,8 @@ namespace franka_action_lib
 
   // Loads sensor data into the designated sensor memory buffer
   // Requires a lock on the mutex of the designated sensor memory buffer
-  void SharedMemoryHandler::loadSensorDataUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal, int current_free_shared_memory_index)
+  void SharedMemoryHandler::loadSensorDataUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal,
+                                                      int current_free_shared_memory_index)
   {
     if(current_free_shared_memory_index == 0)
     {
@@ -554,7 +646,8 @@ namespace franka_action_lib
 
   // Loads traj gen parameters into the designated current_free_shared_memory_index buffer
   // Requires a lock on the mutex of the designated current_free_shared_memory_index buffer
-  void SharedMemoryHandler::loadTrajGenParamsUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal, int current_free_shared_memory_index)
+  void SharedMemoryHandler::loadTrajGenParamsUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal,
+                                                         int current_free_shared_memory_index)
   {
     if(current_free_shared_memory_index == 0)
     {
@@ -572,25 +665,31 @@ namespace franka_action_lib
 
   // Loads feedback controller parameters into the designated current_free_shared_memory_index buffer
   // Requires a lock on the mutex of the designated current_free_shared_memory_index buffer
-  void SharedMemoryHandler::loadFeedbackControllerParamsUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal, int current_free_shared_memory_index)
+  void SharedMemoryHandler::loadFeedbackControllerParamsUnprotected(
+      const franka_action_lib::ExecuteSkillGoalConstPtr &goal, int current_free_shared_memory_index)
   {
     if(current_free_shared_memory_index == 0)
     {
       feedback_controller_buffer_0_[0] = static_cast<float>(goal->feedback_controller_type);
       feedback_controller_buffer_0_[1] = static_cast<float>(goal->num_feedback_controller_params);
-      memcpy(feedback_controller_buffer_0_ + 2, &goal->feedback_controller_params[0], goal->num_feedback_controller_params * sizeof(float));
+      memcpy(feedback_controller_buffer_0_ + 2,
+          &goal->feedback_controller_params[0],
+          goal->num_feedback_controller_params * sizeof(float));
     }
     else if(current_free_shared_memory_index == 1)
     {
       feedback_controller_buffer_1_[0] = static_cast<float>(goal->feedback_controller_type);
       feedback_controller_buffer_1_[1] = static_cast<float>(goal->num_feedback_controller_params);
-      memcpy(feedback_controller_buffer_1_ + 2, &goal->feedback_controller_params[0], goal->num_feedback_controller_params * sizeof(float));
+      memcpy(feedback_controller_buffer_1_ + 2,
+          &goal->feedback_controller_params[0],
+          goal->num_feedback_controller_params * sizeof(float));
     }
   }
 
   // Loads termination parameters into the designated current_free_shared_memory_index buffer
   // Requires a lock on the mutex of the designated current_free_shared_memory_index buffer
-  void SharedMemoryHandler::loadTerminationParamsUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal, int current_free_shared_memory_index)
+  void SharedMemoryHandler::loadTerminationParamsUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal,
+                                                             int current_free_shared_memory_index)
   {
     if(current_free_shared_memory_index == 0)
     {
@@ -608,7 +707,8 @@ namespace franka_action_lib
 
   // Loads timer parameters into the designated current_free_shared_memory_index buffer
   // Requires a lock on the mutex of the designated current_free_shared_memory_index buffer
-  void SharedMemoryHandler::loadTimerParamsUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal, int current_free_shared_memory_index)
+  void SharedMemoryHandler::loadTimerParamsUnprotected(const franka_action_lib::ExecuteSkillGoalConstPtr &goal,
+                                                       int current_free_shared_memory_index)
   {
     if(current_free_shared_memory_index == 0)
     {
