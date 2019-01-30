@@ -1,4 +1,4 @@
-# Planning
+# Planning in grid-world
 
 This is a software package for running the task-switching code on a gri-world restaurant simulation.
 
