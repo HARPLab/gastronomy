@@ -80,6 +80,7 @@ class DenseCorrespondenceTraining(object):
 
         batch_size = self._config['training']['batch_size']
         num_workers = self._config['training']['num_workers']
+        logging.info("Number of data loading workers: %d" % (num_workers))
         
         self._dataset.set_parameters_from_training_config(self._config)
 
@@ -273,11 +274,10 @@ class DenseCorrespondenceTraining(object):
             self.save_network(dcn, optimizer, 0)
 
         t_start = time.time()
+        loss_vec = []
+        match_loss_vec = []
+        non_match_loss_vec = []
         for epoch in range(num_epochs):  # loop over the dataset multiple times
-            loss_vec = []
-            match_loss_vec = []
-            non_match_loss_vec = []
-        
             for i, data in enumerate(self._data_loader, 0):
                 loss_current_iteration += 1
                 start_iter = time.time()
@@ -340,12 +340,19 @@ class DenseCorrespondenceTraining(object):
                     del loss, match_loss, non_match_loss, masked_non_match_loss, background_non_match_loss, blind_non_match_loss
                     gc.collect()
 
+                    print '\tTraining average:loss: %.4f, match_loss: %.4f, non_match_loss: %.4f' % \
+                            (np.mean(loss_vec), np.mean(match_loss_vec), np.mean(non_match_loss_vec))
+                    loss_vec = []
+                    match_loss_vec = []
+                    non_match_loss_vec = []
+                    
                     dcn.eval()
                     test_loss, test_match_loss, test_non_match_loss = DCE.compute_loss_on_salad_dataset(dcn,
                                                                                                   self._data_loader_test, self._config['loss_function'], num_iterations=self._config['training']['test_loss_num_iterations'])
 
                     print '\tTesting results: loss: %.4f, match_loss: %.4f, non_match_loss: %.4f' % \
                         (test_loss,  test_match_loss, test_non_match_loss)
+
                     # delete these variables so we can free GPU memory
                     del test_loss, test_match_loss, test_non_match_loss
 
@@ -359,8 +366,6 @@ class DenseCorrespondenceTraining(object):
                     gc_elapsed = time.time() - gc_start
                     logging.debug("garbage collection took %.2d seconds" %(gc_elapsed))
 
-            print '======== [Epoch Done]. Average: loss: %.4f, match_loss: %.4f, non_match_loss: %.4f ========' % \
-                    (np.mean(loss_vec), np.mean(match_loss_vec), np.mean(non_match_loss_vec))
         logging.info("Finished training.")
         self.save_network(dcn, optimizer, loss_current_iteration, logging_dict=self._logging_dict)
         return
