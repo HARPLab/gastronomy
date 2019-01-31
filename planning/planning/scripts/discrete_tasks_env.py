@@ -14,6 +14,7 @@ class DiscreteTasks(gym.Env):
 	metadata = {'render.modes': ['human']}
 
 	def __init__(self, tasks, robot, max_time, VI = False):
+		self.print_status = False
 		self.tasks = tasks
 		self.robot = robot
 
@@ -40,6 +41,7 @@ class DiscreteTasks(gym.Env):
 		for task in self.tasks:
 			obs.append((0, 1, 1, "task_id"))
 			self.state_space_dim += (2,)
+			# task.print()
 		
 		
 		for task in self.tasks:
@@ -60,16 +62,19 @@ class DiscreteTasks(gym.Env):
 				obs.append((feature.low, feature.high, feature.discretization, feature.name))
 
 		self.state_space = obs
-		print ("state space: ", self.state_space)
-		print ("state space dim: ", self.state_space_dim)
+		if self.print_status:
+			print ("state space: ", self.state_space)
+			print ("state space dim: ", self.state_space_dim)
 		self.reset()
 		# set_trace()
 
 		if VI:
 			self.P = {}
-			print ("computing P ...")
+			if self.print_status:
+				print ("computing P ...")
 			self.compute_P()
-			print ("done computing P ...")
+			if self.print_status:
+				print ("done computing P ...")
 
 
 	def step(self, task, start_state=None, simulate=False):
@@ -153,17 +158,21 @@ class DiscreteTasks(gym.Env):
 		if self.include_time:
 			self.state.append(0) #time			
 		self.state.extend([0 for i in range(len(self.tasks))])
+		
+		if self.print_status:
+			print ("reset all: ")
 
-		print ("reset all: ")
 		for task in self.tasks:
 			task.reset()
 			for feature in task.get_features():
-				print (feature.name, feature.value)
+				if self.print_status:
+					print (feature.name, feature.value)
 				self.state.append(feature.value)
 
 		self.robot.reset()
 		for feature in self.robot.get_features():
-			print (feature.name, feature.value)
+			if self.print_status:
+				print (feature.name, feature.value)
 			self.state.append(feature.value)
 		return self.get_state_index(self.state)
 

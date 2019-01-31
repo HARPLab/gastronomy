@@ -11,6 +11,7 @@ EPS_GREEDY_W_DECAY = "epsilon_greedy_w_decay"
 
 class Q_learning:
 	def __init__(self,env,num_actions,num_states,epsilon,gamma,alpha,exploration_policy):
+		self.print_status = True
 		self.q = np.zeros((num_states,num_actions))
 		self.num_actions = num_actions
 		self.num_states = num_states
@@ -82,7 +83,8 @@ class Q_learning:
 		return np.argmax(self.q, axis=1);
 
 	def train(self,num_episodes,num_test_episodes,max_steps = 10000000):
-		print ("******* training ", "q learning")
+		if self.print_status:
+			print ("******* q learning")
 		test_every = 1
 		self.train_curve = np.zeros(int(num_episodes/test_every))
 		self.success_curve = np.zeros(int(num_episodes/test_every))

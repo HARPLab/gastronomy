@@ -14,12 +14,13 @@ import pylab as plt
 from draw_env import *
 
 robot = None
-np.random.seed(3)
+np.random.seed(80)
 state_num = 0
 MAX_TIME = 10
 global_time = 0
-
+render_trace = True
 VI = False
+print_status = False
 
 def create_state_machines(time, table, robot):
     global state_num
@@ -159,70 +160,88 @@ class Robot:
         self.mutex = threading.Lock()
         self.done = False
         self.restaurant = restaurant
+        self.features = None
 
         self.reset()
 
     def add_task(self, task):
-        self.mutex.acquire()
         try:
+            self.mutex.acquire()
             self.tasks.append(task)
         finally:
             self.mutex.release()
 
     def remove_task(self,task):
-        self.mutex.acquire()
         try:
+            self.mutex.acquire()
             self.tasks.remove(task)
         finally:
             self.mutex.release()
 
     def pop_task(self, task):
-        self.mutex.acquire()
         try:
+            self.mutex.acquire()
             self.tasks.remove(task)
         finally:
             self.mutex.release()
 
     def select_task(self,tasks):
-        print ("robot start: ", int(self.get_feature("x").value),int(self.get_feature("y").value))
+        global print_status
+        # global render_trace
+        # if len(self.tasks) == 3:
+        #     if render_trace:
+        #         set_trace()
+        #         render_trace = False
+        #     self.reset()
+        if print_status:
+            print ("robot start: ", int(self.get_feature("x").value),int(self.get_feature("y").value))
         global MAX_TIME, global_time, VI
         # env = gym.make('Discrete-Restaurant-v0')
+
         if VI is not None and (len(tasks) > 1):
             initial_features = copy.deepcopy(self.get_features())
             env = DiscreteTasks(tasks,self, MAX_TIME, VI)
 
-            num_train_episodes = 50000
+            num_train_episodes = 20000
             num_test_episodes = 10
-            
-            print ("env name: ",env.name)
-            print("# of actions: ",env.nA)
-            print("# of states: ", env.nS)
+
+            if print_status:            
+                print ("env name: ",env.name)
+                print("# of actions: ",env.nA)
+                print("# of states: ", env.nS)
+
             if not VI:
-                print ("**************************************")
-                print ("Q-learning started.")
+                if print_status:
+                    print ("**************************************")
+                    print ("Q-learning started.")
                 agent = Q_learning(env, env.nA, env.nS, epsilon=0.1, gamma=0.95, alpha=0.05, exploration_policy="epsilon_greedy_w_decay")
                 agent.train(num_train_episodes,num_test_episodes)
                 val_func = agent.get_V()
                 policy = agent.get_policy()
                 Q = agent.get_Q()
-                print ("Q-learning ended.")
-                print ("**************************************")
+                if print_status:
+                    print ("Q-learning ended.")
+                    print ("**************************************")
             else:
-                print ("**************************************")
-                print ("Value iteration started.")
+                if print_status:
+                    print ("**************************************")
+                    print ("Value iteration started.")
                 val_func, iterations, policy, Q = rl.value_iteration(env, gamma=0.95)
-                print ("num of iterations: "+str(iterations))
-                print ("Value iteration ended.")
-                print ("**************************************")
+                if print_status:
+                    print ("num of iterations: "+str(iterations))
+                    print ("Value iteration ended.")
+                    print ("**************************************")
             t0_x = tasks[0].get_feature("x").value
             t0_y = tasks[0].get_feature("y").value
             t1_x = tasks[1].get_feature("x").value
             t1_y = tasks[1].get_feature("y").value
-            print ("task0: ", tasks[0].table.id, " ",t0_x,t0_y,"task1: ", tasks[1].table.id, " ",t1_x,t1_y)
+            if print_status:
+                    print ("task0: ", tasks[0].table.id, " ",t0_x,t0_y,"task1: ", tasks[1].table.id, " ",t1_x,t1_y)
             if len(tasks) ==3:
                 t2_x = tasks[2].get_feature("x").value
                 t2_y = tasks[2].get_feature("y").value
-                print ("task0: ", tasks[0].table.id, " ",t0_x,t0_y,"task1: ", tasks[1].table.id, " ",t1_x,t1_y,"task2: ", tasks[2].table.id, " ",t2_x,t2_y)
+                if print_status:
+                    print ("task0: ", tasks[0].table.id, " ",t0_x,t0_y,"task1: ", tasks[1].table.id, " ",t1_x,t1_y,"task2: ", tasks[2].table.id, " ",t2_x,t2_y)
 
             self.set(initial_features)
             policy_reshaped =  policy.reshape(env.state_space_dim)
@@ -260,10 +279,14 @@ class Robot:
     def run(self):
         global MAX_TIME, global_time
         self.done = False
+        self.curr_task = None
+        
         while not self.done:
-            if self.tasks.__len__() > 0:
-                self.mutex.acquire()
+            self.mutex.acquire() 
+
+            if self.tasks.__len__() > 0:               
                 self.planned_tasks = list(self.tasks)
+                self.restaurant.render()
                 task = self.select_task(self.planned_tasks)
                 self.curr_task = task
                 _,_,num_steps = task.execute(render=True)
@@ -271,11 +294,22 @@ class Robot:
                 self.curr_task = None
                 global_time += num_steps
                 self.restaurant.render()
-                self.mutex.release()
-            else:
+            
+            self.mutex.release()
+            if self.tasks.__len__() == 0:   
+                # dum1 = State("dum1", 0, self.restaurant.dummy_table)
+                # dum2 = State("dum2", 0, self.restaurant.dummy_table)
+                # dummy_task = Execution_Action(self, "exec", dum1, dum2, self.restaurant.dummy_table, 1)
+                # self.curr_task = None
+                # _,_,_ = dummy_task.execute(render=True)
                 sleep(0.1)
+                self.restaurant.render()
+
+            
+
 
     def reset(self):
+        # if self.features == None:
         self.features = []
         # self.features.append(Feature("x", "discrete", False, 0, 10, 1, np.random.randint(0,11))) ## 10 by 10 grid
         # self.features.append(Feature("y", "discrete", False, 0, 10, 1, np.random.randint(0,11)))
@@ -443,12 +477,12 @@ class Robot_Action (Action):
             prev_y = position_features[1][1]
             y = position_features[1][2]
             self.table.render()
-            while (prev_x != x):
+            while (prev_x != x and not (self.table == self.table.restaurant.dummy_table and self.robot.tasks.__len__() != 0)):
                 dir_x = np.sign(x-prev_x)
                 prev_x = prev_x + dir_x
                 self.robot.set_feature("x", prev_x)
                 self.table.render()
-            while (prev_y != y):
+            while (prev_y != y and not (self.table == self.table.restaurant.dummy_table and self.robot.tasks.__len__() != 0)):
                 dir_y = np.sign(y-prev_y)
                 prev_y = prev_y + dir_y
                 self.robot.set_feature("y", prev_y)
@@ -474,6 +508,8 @@ class Sensing_Action (Robot_Action):
 
     def print(self):
         print("sensing action name: ", self.name)
+        self.begin.print()
+        self.end.print()
 
 class Execution_Action (Robot_Action):
     def __init__(self, robot, name, begin, end, table, transition_prob = 0.5):
@@ -481,6 +517,8 @@ class Execution_Action (Robot_Action):
 
     def print(self):
         print("execution action name: ", self.name)
+        self.begin.print()
+        self.end.print()
 
 class Human_Action (Action):
     def __init__(self, name, begin, end, table, transition_prob = 0.5):
@@ -507,7 +545,7 @@ class State:
         self.parents.append(parent)
 
     def print(self):
-        print (self.table.get_prefix() + " state name: ",self.name, " #", self.number)
+        print (self.table.get_prefix() + " state: ",self.name, " #", self.number)
 
 class State_Machine:
     def __init__(self, name, table, robot):
@@ -529,6 +567,7 @@ class State_Machine:
             sleep(self.current_state.time)
             edge = np.random.choice(self.current_state.children, p=self.current_state.transition_probs)
             if isinstance(edge, Robot_Action):
+                edge.done = False
                 self.robot.add_task(edge)
                 while (not edge.done):
                     sleep(0.1)
@@ -555,15 +594,19 @@ class History:
         print (str(self.id) + " " + str(self.state.number) + "," + str(self.time_passed))
 
 class Table:
-    def __init__(self, restaurant, id, robot):
+    def __init__(self, restaurant, id, robot, fake=False):
+        self.num_humans = 0
+        self.time = 0
+        self.fake = fake
         self.restaurant = restaurant
         self.id = id
         self.start_time = time.time()
         self.humans = set()
         self.histories = list()
-        self.num_humans = np.random.randint(5)
-        self.time = np.random.randint(5)/5.0
-        self.state_machines = create_state_machines(self.time, self, robot)
+        if not self.fake:
+            self.num_humans = np.random.randint(5)
+            self.time = np.random.randint(5)/5.0
+            self.state_machines = create_state_machines(self.time, self, robot)
         self.patience = None
         for h in range(self.num_humans):
             self.humans.add(Human(str(h),str(h)))
@@ -607,19 +650,23 @@ class Table:
 
     def reset_all (self):
         self.features = []
-        # self.initialization_feature_range = (6, 9)
-        # self.features.append(Feature("attention", "discrete", True, 0, MAX_TIME, 1, \
-        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
-        # self.features.append(Feature("urgency", "discrete", True, 0, MAX_TIME, 1, \
-        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
-        # self.features.append(Feature("completion", "discrete", True, 0, MAX_TIME, 1, \
-        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
+        if not self.fake:
+            # self.initialization_feature_range = (6, 9)
+            # self.features.append(Feature("attention", "discrete", True, 0, MAX_TIME, 1, \
+            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
+            # self.features.append(Feature("urgency", "discrete", True, 0, MAX_TIME, 1, \
+            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
+            # self.features.append(Feature("completion", "discrete", True, 0, MAX_TIME, 1, \
+            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
 
-        # self.features.append(Feature("x", "discrete", False, 0, 10, 1, np.random.randint(0,11))) ## 10 by 10 grid
-        # self.features.append(Feature("y", "discrete", False, 0, 10, 1, np.random.randint(0,11)))
-        self.features.append(Feature("x", "discrete", False, 0, 6, 1, np.random.randint(0,7))) ## 10 by 10 grid
-        self.features.append(Feature("y", "discrete", False, 0, 6, 1, np.random.randint(0,7)))
-        # self.features.append(Feature("theta", "discrete", False, 0, 11, 1, np.random.randint(0,12))) # theta # * 30 degree
+            # self.features.append(Feature("x", "discrete", False, 0, 10, 1, np.random.randint(0,11))) ## 10 by 10 grid
+            # self.features.append(Feature("y", "discrete", False, 0, 10, 1, np.random.randint(0,11)))
+            self.features.append(Feature("x", "discrete", False, 0, 6, 1, np.random.randint(0,7))) ## 10 by 10 grid
+            self.features.append(Feature("y", "discrete", False, 0, 6, 1, np.random.randint(0,7)))
+            # self.features.append(Feature("theta", "discrete", False, 0, 11, 1, np.random.randint(0,12))) # theta # * 30 degree
+        else:
+            self.features.append(Feature("x", "discrete", False, 0, 6, 1, 0)) ## 10 by 10 grid
+            self.features.append(Feature("y", "discrete", False, 0, 6, 1, 0))
 
     def reset (self):
         # self.get_feature("attention").set_value ( \
@@ -637,9 +684,10 @@ class Restaurant:
         self.done = False
         self.tables = list()
         self.threads = list()
-        self.num_tables = 2
+        self.num_tables = 3
         self.robot = Robot(self)
         self.robot_thread = threading.Thread(target=self.robot.run, daemon=True, args=())
+        self.dummy_table = Table(self, 10000, self.robot, fake=True)
         for t in range(self.num_tables):
             table = Table(self, t, self.robot)
             self.tables.append(table)
@@ -647,7 +695,7 @@ class Restaurant:
 
         rng = list(range(self.num_tables))
         np.random.shuffle(rng)
-        print (rng)
+
         self.robot_thread.start()
         for t in rng:
             self.threads[t].start()
@@ -673,7 +721,7 @@ class Restaurant:
 
     def render(self, mode='human', close=False):
         """ Viewer only supports human mode currently. """
-
+        global render_trace
         plt.clf()
         margin = 0.5
         x_low = self.robot.get_feature("x").low - margin
@@ -695,7 +743,11 @@ class Restaurant:
         # drawPath(self.poses, self.counter)
         plt.show(block=False)
         plt.pause(0.5)
-        # plt.close()
+
+        # if render_trace:
+        #     set_trace() 
+        #     render_trace = False
+        ## plt.close()
 
         # if self.finish_render:
         #     plt.show(block=False)
