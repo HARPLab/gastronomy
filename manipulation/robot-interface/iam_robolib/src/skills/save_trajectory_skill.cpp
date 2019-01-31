@@ -15,19 +15,19 @@ void SaveTrajectorySkill::execute_skill() {
   assert(false);
 }
 
-void SaveTrajectorySkill::execute_skill_on_franka(franka::Robot *robot, franka::Gripper* gripper,
-                                               RobotStateData *robot_state_data) {
+void SaveTrajectorySkill::execute_skill_on_franka(FrankaRobot *robot,
+                                                  RobotStateData *robot_state_data) {
   if (!running_skill_) {
     std::cout << "Will execute SaveTrajectory skill\n" << std::endl;
 
     running_skill_ = true;
     save_traj_thread_ = std::thread([=]() {
-      franka::RobotState robot_state = robot->readOnce();
+      franka::RobotState robot_state = robot->getRobotState();
       franka::Duration start_time(robot_state.time), curr_time(robot_state.time);
       int print_rate  = 500;
 
       while (running_skill_) {
-        robot_state = robot->readOnce();
+        robot_state = robot->getRobotState();
         curr_time = robot_state.time;
         double time = curr_time.toSec() - start_time.toSec();
 

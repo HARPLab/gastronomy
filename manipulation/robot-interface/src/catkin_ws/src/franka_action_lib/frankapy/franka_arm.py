@@ -1,3 +1,4 @@
+import sys, signal
 import numpy as np
 from autolab_core import RigidTransform
 
@@ -15,12 +16,30 @@ from .franka_constants import FrankaConstants as FC
 class FrankaArm:
 
     def __init__(self, rosnode_name='franka_arm_client'):
-        rospy.init_node(rosnode_name)
+        self._connected = False
+        self._in_skill = False
+
+        # set signal handler to handle ctrl+c and kill sigs
+        signal.signal(signal.SIGINT, self._sigint_handler_gen())
+
+        # init ROS
+        rospy.init_node(rosnode_name, disable_signals=True)
         self._sub = FrankaArmSubscriber(new_ros_node=False)
         self._client = actionlib.SimpleActionClient('/execute_skill_action_server_node/execute_skill', ExecuteSkillAction)
         self._client.wait_for_server()
+        self._current_goal_handle = None
+        self._connected = True
 
+        # set default identity tool delta pose
         self._tool_delta_pose = RigidTransform(from_frame='franka_tool', to_frame='franka_tool_base')
+
+    def _sigint_handler_gen(self):
+        def sigint_handler(sig, frame):
+            if self._connected and self._in_skill:
+                self._client.cancel_goal()
+            sys.exit(0)
+
+        return sigint_handler
 
     def _send_goal(self, goal, cb):
         '''
@@ -28,12 +47,11 @@ class FrankaArm:
             FrankaArmCommException if a timeout is reached
         '''
         # TODO(jacky): institute a timeout check
+
         self._client.send_goal(goal, feedback_cb=cb)
-        done = self._client.wait_for_result(rospy.Duration.from_sec(5.0))
-
-        while not rospy.is_shutdown() and done != True:
-            done = self._client.wait_for_result(rospy.Duration.from_sec(5.0))
-
+        self._in_skill = True
+        self._client.wait_for_result()
+        self._in_skill = False
         return self._client.get_result()
 
     '''

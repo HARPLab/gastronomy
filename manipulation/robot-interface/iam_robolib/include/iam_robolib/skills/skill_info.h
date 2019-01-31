@@ -21,20 +21,15 @@ class SkillInfo : public BaseSkill {
 
   void execute_skill() override;
 
-  void execute_skill_on_franka(franka::Robot *robot, franka::Gripper *gripper,
-                               RobotStateData *robot_state_data) override;
+  void execute_skill_on_franka(FrankaRobot *robot, RobotStateData *robot_state_data) override;
 
-  void execute_meta_skill_on_franka(franka::Robot *robot, franka::Gripper *gripper,
-                                    RobotStateData *robot_state_data);
+  void execute_meta_skill_on_franka(FrankaRobot *robot, RobotStateData *robot_state_data);
 
-  void execute_skill_on_franka_temp(franka::Robot *robot, franka::Gripper *gripper,
-      RobotStateData *robot_state_data);
+  void execute_skill_on_franka_temp(FrankaRobot *robot, RobotStateData *robot_state_data);
 
-  void execute_skill_on_franka_temp2(franka::Robot *robot, franka::Gripper *gripper,
-      RobotStateData *robot_state_data);
+  void execute_skill_on_franka_temp2(FrankaRobot *robot, RobotStateData *robot_state_data);
 
-  void execute_skill_on_franka_joint_base(franka::Robot* robot, franka::Gripper* gripper,
-      RobotStateData *robot_state_data);
+  void execute_skill_on_franka_joint_base(FrankaRobot* robot, RobotStateData *robot_state_data);
 
   bool should_terminate() override;
 
@@ -48,7 +43,13 @@ class SkillInfo : public BaseSkill {
    * Write result to the shared memory after skill is done.
    * @param result_buffer
    */
-  void write_result_to_shared_memory(float *result_buffer, franka::Robot *robot) override;
+  void write_result_to_shared_memory(float *result_buffer, FrankaRobot *robot) override;
+
+  /**
+   * Write result to the shared memory after skill is done.
+   * @param result_buffer
+   */
+  void write_result_to_shared_memory(float *result_buffer, Robot *robot) override;
 
 
   /**

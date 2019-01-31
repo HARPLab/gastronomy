@@ -18,8 +18,7 @@ class BaseMetaSkill {
 
   SkillStatus getCurrentMetaSkillStatus();
 
-  virtual void execute_skill_on_franka(run_loop* run_loop, franka::Robot *robot,
-      franka::Gripper *gripper, RobotStateData *robot_state_data);
+  virtual void execute_skill_on_franka(run_loop* run_loop, FrankaRobot *robot, RobotStateData *robot_state_data);
 
  protected:
   int skill_idx_;

@@ -33,47 +33,56 @@ include_directories(include)
 ## Library
 
 add_library(iam_robolib SHARED
-  src/run_loop.cpp
-  src/duration.cpp
-  src/termination_handler/contact_termination_handler.cpp
-  src/skills/skill_info.cpp
-  src/skill_info_manager.cpp
-  src/trajectory_generator/trajectory_generator.cpp
-  src/trajectory_generator/linear_trajectory_generator.cpp
-  src/trajectory_generator/linear_trajectory_generator_with_time_and_goal.cpp
-  src/trajectory_generator/impulse_trajectory_generator.cpp
-  src/termination_handler/linear_trajectory_generator_with_time_and_goal_termination_handler.cpp
-  src/feedback_controller/torque_feedback_controller.cpp
-  src/trajectory_generator/counter_trajectory_generator.cpp
+  src/feedback_controller/custom_gain_torque_controller.cpp
   src/feedback_controller/feedback_controller.cpp
   src/feedback_controller/noop_feedback_controller.cpp
-  src/termination_handler/termination_handler.cpp
-  src/termination_handler/time_termination_handler.cpp
-  src/trajectory_generator/stay_in_initial_position_trajectory_generator.cpp
-  src/sensor_data.cpp
-  src/termination_handler/noop_termination_handler.cpp
-  src/run_loop_logger.cpp
-  src/termination_handler/final_pose_termination_handler.cpp
-  src/robot_state_data.cpp
-  src/termination_handler/final_joint_termination_handler.cpp
-  src/trajectory_generator/linear_joint_trajectory_generator.cpp
-  src/skills/gripper_open_skill.cpp
-  src/trajectory_generator/gripper_open_trajectory_generator.cpp
+  src/feedback_controller/torque_feedback_controller.cpp
+  src/skills/base_meta_skill.cpp
   src/skills/base_skill.cpp
-  src/file_stream_logger.cpp
-  src/trajectory_generator/dmp_trajectory_generator.cpp
+  src/skills/force_torque_skill.cpp
+  src/skills/gripper_open_skill.cpp
+  src/skills/joint_pose_continuous_skill.cpp
   src/skills/joint_pose_skill.cpp
   src/skills/joint_pose_with_torque_control_skill.cpp
-  src/skills/force_torque_skill.cpp
-  src/trajectory_generator/relative_linear_trajectory_generator.cpp
-  src/feedback_controller/custom_gain_torque_controller.cpp
   src/skills/save_trajectory_skill.cpp
-  src/skills/joint_pose_continuous_skill.cpp
-  src/skills/base_meta_skill.cpp
-  src/run_loop_shared_memory_handler.cpp
-  src/trajectory_generator_factory.cpp
+  src/skills/skill_info.cpp
+  src/termination_handler/contact_termination_handler.cpp
+  src/termination_handler/final_joint_termination_handler.cpp
+  src/termination_handler/final_pose_termination_handler.cpp
+  src/termination_handler/linear_trajectory_generator_with_time_and_goal_termination_handler.cpp
+  src/termination_handler/noop_termination_handler.cpp
+  src/termination_handler/termination_handler.cpp
+  src/termination_handler/time_termination_handler.cpp
+  src/trajectory_generator/counter_trajectory_generator.cpp
+  src/trajectory_generator/dmp_trajectory_generator.cpp
+  src/trajectory_generator/gripper_open_trajectory_generator.cpp
+  src/trajectory_generator/impulse_trajectory_generator.cpp
+  src/trajectory_generator/linear_joint_trajectory_generator.cpp
+  src/trajectory_generator/linear_trajectory_generator.cpp
+  src/trajectory_generator/linear_trajectory_generator_with_time_and_goal.cpp
+  src/trajectory_generator/relative_linear_trajectory_generator.cpp
+  src/trajectory_generator/stay_in_initial_position_trajectory_generator.cpp
+  src/trajectory_generator/trajectory_generator.cpp
+  src/ur/commander.cpp
+  src/ur/master_board.cpp
+  src/ur/messages.cpp
+  src/ur/robot_mode.cpp
+  src/ur/rt_consumer.cpp
+  src/ur/rt_state.cpp
+  src/ur/server.cpp
+  src/ur/stream.cpp
+  src/duration.cpp
   src/feedback_controller_factory.cpp
+  src/file_stream_logger.cpp
+  src/robot_state_data.cpp
+  src/run_loop.cpp
+  src/run_loop_logger.cpp
+  src/run_loop_shared_memory_handler.cpp
+  src/sensor_data.cpp
+  src/skill_info_manager.cpp
+  src/tcp_socket.cpp
   src/termination_handler_factory.cpp
+  src/trajectory_generator_factory.cpp
 )
 
 # Add namespace

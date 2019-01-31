@@ -22,9 +22,8 @@ void ForceTorqueSkill::execute_skill() {
   assert(false);
 }
 
-void ForceTorqueSkill::execute_skill_on_franka(franka::Robot* robot,
-                                             franka::Gripper* gripper,
-                                             RobotStateData *robot_state_data) {
+void ForceTorqueSkill::execute_skill_on_franka(FrankaRobot* robot,
+                                               RobotStateData *robot_state_data) {
 
   try {
     double time = 0.0;
@@ -32,10 +31,10 @@ void ForceTorqueSkill::execute_skill_on_franka(franka::Robot* robot,
 
     std::cout << "Will run the control loop\n";
 
-    franka::Model model = robot->loadModel();
+    franka::Model model = robot->getModel();
 
     // get torque offset from gravity
-    franka::RobotState initial_state = robot->readOnce();
+    franka::RobotState initial_state = robot->getRobotState();
     Eigen::VectorXd initial_tau_ext(7);
     std::array<double, 7> gravity_array = model.gravity(initial_state);
     Eigen::Map<Eigen::Matrix<double, 7, 1> > initial_tau_measured(initial_state.tau_J.data());
@@ -82,7 +81,7 @@ void ForceTorqueSkill::execute_skill_on_franka(franka::Robot* robot,
       return tau_d_array;
     };
 
-    robot->control(force_control_callback);
+    robot->robot_.control(force_control_callback);
 
   } catch (const franka::Exception& ex) {
     run_loop::running_skills_ = false;

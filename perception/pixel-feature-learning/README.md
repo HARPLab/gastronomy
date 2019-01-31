@@ -1,3 +1,4 @@
+
 # Pixel feature learning for food
 This repository contains code for learning pixel feature in the food domain. It is adapted from the Dense Object Net code (https://github.com/RobotLocomotion/pytorch-dense-correspondence). It learns pixel embedding via learning pixel-level correspondence through two data settings:
 - images taken from multiple viewpoints in simulation (multi-view setting)
@@ -25,10 +26,9 @@ source ~/virtualenvs/pci_venv/bin/activate
 source config/setup_environment.sh
 
 pip install matplotlib testresources pybullet visdom requests scipy imageio scikit-image tensorboard sklearn opencv-contrib-python tensorboard_logger tensorflow
-
 pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp27-cp27mu-linux_x86_64.whl torchvision torchnet 
-
-pip install jupyter opencv-python plyfile pandas
+pip install jupyter opencv-python plyfile pandas six Shapely
+pip install imgaug 
 ```
 
 ### 2. File structure
@@ -45,7 +45,6 @@ Source these two file before running:
 source ~/virtualenvs/pci_venv/bin/activate
 source ~/git/pytorch-dense-correspondence/config/setup_environment.sh
 ```
-Note: For the following codes please change all the paths in the codes according to your setting.
 
 #### 3.1 Data
 
@@ -60,7 +59,7 @@ Edit/check these before training:
 * ```get_default_K_matrix``` in ```dense_correspondence/correspondence_tools/correspondence_finder.py``` This is the camera intrinsic matrix computed based on your camera setting (for multi-view setting only).
 * Training config file in ```config/dense_correspondence/training/```
 * Dataset config file in ```config/dense_correspondence/dataset/```
-* training file. e.g. ```training_tutorial_cooking.py```
+* Path pointing to the data in the actual training file. e.g. ```training_tutorial_cooking.py``` for multi-view setting or ```run_training.py``` for the image augmentation setting.
 
 The followings are two example files which serve as templates that you can use for either data settings. They are essentially just a wrapper, can share similar training pipeline inside.
 

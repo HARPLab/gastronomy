@@ -15,9 +15,6 @@
 #include <iam_robolib_common/run_loop_process_info.h>
 #include <iam_robolib_common/SharedMemoryInfo.h>
 
-#include <franka/robot.h>
-#include <franka/gripper.h>
-
 // TODO(Mohit): Fix this, CANNOT do private imports in public headers. FML.
 #include "iam_robolib/skill_info_manager.h"
 #include "iam_robolib/skills/skill_info.h"
@@ -28,8 +25,10 @@
 #include "iam_robolib/feedback_controller_factory.h"
 #include "iam_robolib/termination_handler_factory.h"
 #include "iam_robolib/definitions.h"
-
-//class BaseSkill;
+#include "iam_robolib/robots/robot.h"
+#include "iam_robolib/robots/franka_robot.h"
+#include "iam_robolib/robots/ur5e_robot.h"
+#include "ur_modern_driver/log.h"
 
 // Set thread to real time priority.
 void setCurrentThreadToRealtime(bool throw_on_error);
@@ -39,14 +38,29 @@ void setCurrentThreadToRealtime(bool throw_on_error);
 class run_loop {
  public:
   run_loop(std::mutex& logger_mutex,
-          std::mutex& robot_loop_data_mutex) : limit_rate_(false),
-                                                 cutoff_frequency_(0.0),
-                                                 logger_(logger_mutex),
-                                                 elapsed_time_(0.0),
-                                                 process_info_requires_update_(false),
-                                                 robot_("172.16.0.2"),
-                                                 gripper_("172.16.0.2") {
+           std::mutex& robot_loop_data_mutex,
+           RobotType robot_type,
+           std::string robot_ip)              : limit_rate_(false),
+                                                cutoff_frequency_(0.0),
+                                                logger_(logger_mutex),
+                                                elapsed_time_(0.0),
+                                                process_info_requires_update_(false)
+                                                {
+
     robot_state_data_ = new RobotStateData(robot_loop_data_mutex);
+
+    switch(robot_type)
+    {
+      case RobotType::FRANKA:
+        robot_ = new FrankaRobot(robot_ip, robot_type);
+        break;
+      case RobotType::UR5E:
+        robot_ = new UR5eRobot(robot_ip, robot_type);
+        break;
+      default:
+        robot_ = new Robot(robot_ip, robot_type);
+    }
+
   };
 
   // Todo(Mohit): Implement this!!! We should free up the shared memory correctly.
@@ -62,6 +76,15 @@ class run_loop {
    *  the real time loop.
    */
   void start();
+
+  /**
+   *  Start the RunLoop.
+   *
+   *  This will allocate the shared memory buffers i.e., shared memory object and
+   *  shared memory segment used to communicate between the actionlib interface and
+   *  the real time loop.
+   */
+  void start_ur5e();
 
   void stop();
 
@@ -80,6 +103,11 @@ class run_loop {
    *  Start running the real time loop on franka
    */
   void run_on_franka();
+
+  /**
+   *  Start running the real time loop on ur5e
+   */
+  void run_on_ur5e();
 
   /**
    * Get SkillInfo manager.
@@ -110,8 +138,7 @@ class run_loop {
 
  private:
 
-  franka::Robot robot_;
-  franka::Gripper gripper_;
+  Robot *robot_;
 
   std::thread print_thread_{};
   std::thread current_robot_state_io_thread_{};
