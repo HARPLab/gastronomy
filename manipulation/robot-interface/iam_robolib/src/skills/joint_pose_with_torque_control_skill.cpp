@@ -20,8 +20,8 @@ void JointPoseWithTorqueControlSkill::execute_skill() {
   assert(false);
 }
 
-void JointPoseWithTorqueControlSkill::execute_skill_on_franka(
-    franka::Robot* robot, franka::Gripper* gripper, RobotStateData *robot_state_data) {
+void JointPoseWithTorqueControlSkill::execute_skill_on_franka(FrankaRobot* robot,
+                                                              RobotStateData *robot_state_data) {
 
   try {
     double time = 0.0;
@@ -29,7 +29,7 @@ void JointPoseWithTorqueControlSkill::execute_skill_on_franka(
 
     std::cout << "Will run the control loop\n";
 
-    franka::Model model = robot->loadModel();
+    franka::Model model = robot->getModel();
 
     std::function<franka::JointPositions(const franka::RobotState&, franka::Duration)>
         joint_pose_callback = [=, &time, &log_counter](
@@ -65,7 +65,7 @@ void JointPoseWithTorqueControlSkill::execute_skill_on_franka(
           return feedback_controller_->tau_d_array_;
         };
 
-    robot->control(impedance_control_callback, joint_pose_callback);
+    robot->robot_.control(impedance_control_callback, joint_pose_callback);
 
   } catch (const franka::Exception& ex) {
     run_loop::running_skills_ = false;
@@ -79,8 +79,7 @@ void JointPoseWithTorqueControlSkill::execute_skill_on_franka(
   }
 }
 
-void JointPoseWithTorqueControlSkill::execute_meta_skill_on_franka(franka::Robot *robot,
-                                                                   franka::Gripper *gripper,
+void JointPoseWithTorqueControlSkill::execute_meta_skill_on_franka(FrankaRobot *robot,
                                                                    RobotStateData *robot_state_data) {
   std::cout << "Not implemented\n" << std::endl;
   assert(false);

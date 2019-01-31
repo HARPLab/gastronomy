@@ -22,11 +22,11 @@ SkillStatus BaseMetaSkill::getCurrentMetaSkillStatus() {
   return skill_status_;
 }
 
-void BaseMetaSkill::execute_skill_on_franka(run_loop* run_loop, franka::Robot *robot,
-    franka::Gripper *gripper, RobotStateData *robot_state_data) {
+void BaseMetaSkill::execute_skill_on_franka(run_loop* run_loop, FrankaRobot *robot,
+                                            RobotStateData *robot_state_data) {
   BaseSkill* skill = run_loop->getSkillInfoManager()->get_current_skill();
   if (skill != nullptr) {
-    skill->execute_skill_on_franka(robot, gripper, robot_state_data);
+    skill->execute_skill_on_franka(robot, robot_state_data);
     run_loop->finish_current_skill(skill);
   }
 }

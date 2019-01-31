@@ -12,14 +12,14 @@ void NoopTerminationHandler::initialize_handler() {
   // pass
 }
 
-void NoopTerminationHandler::initialize_handler(franka::Robot *robot) {
+void NoopTerminationHandler::initialize_handler_on_franka(FrankaRobot *robot) {
   // pass
 }
 
 bool NoopTerminationHandler::should_terminate(TrajectoryGenerator *trajectory_generator) {
-  // pass
+  check_terminate_preempt();
 }
 
-bool NoopTerminationHandler::should_terminate(const franka::RobotState &robot_state, TrajectoryGenerator *trajectory_generator) {
-  // pass
+bool NoopTerminationHandler::should_terminate_on_franka(const franka::RobotState &robot_state, TrajectoryGenerator *trajectory_generator) {
+  check_terminate_preempt();
 }

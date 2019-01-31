@@ -22,7 +22,7 @@ class LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler : public Termin
   /**
    * Initialize termination handler after parameter parsing.
    */
-  void initialize_handler(franka::Robot *robot) override;
+  void initialize_handler_on_franka(FrankaRobot *robot) override;
 
   /**
    * Should we terminate the current skill.
@@ -32,7 +32,7 @@ class LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler : public Termin
   /**
    * Should we terminate the current skill.
    */
-  virtual bool should_terminate(const franka::RobotState &robot_state, TrajectoryGenerator *traj_generator) override;
+  virtual bool should_terminate_on_franka(const franka::RobotState &robot_state, TrajectoryGenerator *traj_generator) override;
 
  private:
   int num_params_;

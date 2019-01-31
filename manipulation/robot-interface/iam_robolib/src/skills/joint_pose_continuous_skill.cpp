@@ -25,8 +25,8 @@ bool JointPoseContinuousSkill::isComposableSkill() {
 }
 
 
-void JointPoseContinuousSkill::execute_skill_on_franka(run_loop *run_loop, franka::Robot* robot,
-    franka::Gripper* gripper, RobotStateData *robot_state_data) {
+void JointPoseContinuousSkill::execute_skill_on_franka(run_loop *run_loop, FrankaRobot* robot,
+                                                       RobotStateData *robot_state_data) {
   try {
     double time = 0.0;
     double current_skill_time = 0.0;
@@ -37,9 +37,10 @@ void JointPoseContinuousSkill::execute_skill_on_franka(run_loop *run_loop, frank
 
     std::cout << "Will run JointPoseContinuousSkill control loop\n";
 
-    franka::Model model = robot->loadModel();
-    std::array<double, 7> last_dmp_q = robot->readOnce().q;
-    std::array<double, 7> last_dmp_dq = robot->readOnce().dq;
+    franka::Model model = robot->getModel();
+    franka::RobotState initial_robot_state = robot->getRobotState();
+    std::array<double, 7> last_dmp_q = initial_robot_state.q;
+    std::array<double, 7> last_dmp_dq = initial_robot_state.dq;
 
     std::function<franka::JointPositions(const franka::RobotState&, franka::Duration)>
         joint_pose_callback = [&](
@@ -109,7 +110,7 @@ void JointPoseContinuousSkill::execute_skill_on_franka(run_loop *run_loop, frank
       return joint_desired;
     };
 
-    robot->control(joint_pose_callback);
+    robot->robot_.control(joint_pose_callback);
 
   } catch (const franka::Exception& ex) {
     run_loop::running_skills_ = false;

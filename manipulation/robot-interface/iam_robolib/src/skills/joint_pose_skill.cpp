@@ -22,8 +22,7 @@ void JointPoseSkill::execute_skill() {
   assert(false);
 }
 
-void JointPoseSkill::execute_skill_on_franka(franka::Robot* robot,
-                                             franka::Gripper* gripper,
+void JointPoseSkill::execute_skill_on_franka(FrankaRobot* robot,
                                              RobotStateData *robot_state_data) {
 
   try {
@@ -32,7 +31,7 @@ void JointPoseSkill::execute_skill_on_franka(franka::Robot* robot,
 
     std::cout << "Will run the control loop\n";
 
-    franka::Model model = robot->loadModel();
+    franka::Model model = robot->getModel();
 
     std::function<franka::JointPositions(const franka::RobotState&, franka::Duration)>
         joint_pose_callback = [=, &time, &log_counter](
@@ -61,7 +60,7 @@ void JointPoseSkill::execute_skill_on_franka(franka::Robot* robot,
       return joint_desired;
     };
 
-    robot->control(joint_pose_callback);
+    robot->robot_.control(joint_pose_callback);
 
   } catch (const franka::Exception& ex) {
     run_loop::running_skills_ = false;

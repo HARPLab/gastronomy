@@ -68,7 +68,7 @@ void LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler::initialize_hand
   // pass
 }
 
-void LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler::initialize_handler(franka::Robot *robot) {
+void LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler::initialize_handler_on_franka(FrankaRobot *robot) {
   // pass
 }
 
@@ -76,6 +76,8 @@ void LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler::initialize_hand
 // trajectory generator to check for termination. If you would like to use the actual position and orientation from the
 // robot state to check for termination, use the should_terminate function with robot state below.
 bool LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler::should_terminate(TrajectoryGenerator *trajectory_generator) {
+  check_terminate_preempt();
+  
   if(!done_){
     LinearTrajectoryGeneratorWithTimeAndGoal *linear_trajectory_generator_with_time_and_goal =
           static_cast<LinearTrajectoryGeneratorWithTimeAndGoal *>(trajectory_generator);
@@ -124,8 +126,9 @@ bool LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler::should_terminat
 }
 
 
-bool LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler::should_terminate(const franka::RobotState &robot_state, TrajectoryGenerator *trajectory_generator) {
-  
+bool LinearTrajectoryGeneratorWithTimeAndGoalTerminationHandler::should_terminate_on_franka(const franka::RobotState &robot_state, TrajectoryGenerator *trajectory_generator) {
+  check_terminate_preempt();
+
   if(!done_){
     LinearTrajectoryGeneratorWithTimeAndGoal *linear_trajectory_generator_with_time_and_goal =
           static_cast<LinearTrajectoryGeneratorWithTimeAndGoal *>(trajectory_generator);

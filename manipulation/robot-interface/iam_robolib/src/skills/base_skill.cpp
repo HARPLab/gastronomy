@@ -4,7 +4,6 @@
 
 #include "iam_robolib/skills/base_skill.h"
 
-#include <franka/robot.h>
 #include <iostream>
 
 #include "iam_robolib/feedback_controller/feedback_controller.h"
@@ -45,7 +44,7 @@ TerminationHandler* BaseSkill::get_termination_handler() {
   return termination_handler_;
 }
 
-void BaseSkill::start_skill(franka::Robot* robot,
+void BaseSkill::start_skill(Robot* robot,
                             TrajectoryGenerator *traj_generator,
                             FeedbackController *feedback_controller,
                             TerminationHandler *termination_handler) {
@@ -55,8 +54,16 @@ void BaseSkill::start_skill(franka::Robot* robot,
   feedback_controller_ = feedback_controller;
   feedback_controller_->initialize_controller();
   termination_handler_ = termination_handler;
-  termination_handler_->initialize_handler();
-  termination_handler_->initialize_handler(robot);
+  switch(robot->robot_type_)
+  {
+    case RobotType::FRANKA:
+      termination_handler_->initialize_handler_on_franka(dynamic_cast<FrankaRobot *>(robot));
+      break;
+    case RobotType::UR5E:
+      break;
+    default:
+      termination_handler_->initialize_handler();
+  }
 }
 
 bool BaseSkill::should_terminate() {
@@ -67,7 +74,11 @@ void BaseSkill::write_result_to_shared_memory(float *result_buffer) {
   std::cout << "Should write result to shared memory\n";
 }
 
-void BaseSkill::write_result_to_shared_memory(float *result_buffer, franka::Robot* robot) {
+void BaseSkill::write_result_to_shared_memory(float *result_buffer, FrankaRobot* robot) {
+  std::cout << "Should write result to shared memory\n";
+}
+
+void BaseSkill::write_result_to_shared_memory(float *result_buffer, Robot* robot) {
   std::cout << "Should write result to shared memory\n";
 }
 

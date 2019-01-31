@@ -10,10 +10,10 @@ void GripperOpenSkill::execute_skill() {
   assert(false);
 }
 
-void GripperOpenSkill::execute_skill_on_franka(franka::Robot *robot, franka::Gripper* gripper,
+void GripperOpenSkill::execute_skill_on_franka(FrankaRobot *robot,
                                                RobotStateData *robot_state_data) {
   // Check for the maximum grasping width.
-  franka::GripperState gripper_state = gripper->readOnce();
+  franka::GripperState gripper_state = robot->getGripperState();
   GripperOpenTrajectoryGenerator *gripper_traj_generator = static_cast<
       GripperOpenTrajectoryGenerator *>(traj_generator_);
   double open_width = gripper_traj_generator->getWidth();
@@ -26,13 +26,13 @@ void GripperOpenSkill::execute_skill_on_franka(franka::Robot *robot, franka::Gri
   double open_speed = gripper_traj_generator->getSpeed();
   if (gripper_traj_generator->isGraspSkill()) {
     // TOOD(Mohit): Maybe stop the gripper before trying to grip again?
-    franka::GripperState gripper_state = gripper->readOnce();
+    franka::GripperState gripper_state = robot->getGripperState();
     if (!gripper_state.is_grasped) {
-      return_status_ = gripper->grasp(open_width, open_speed, gripper_traj_generator->getForce(),
+      return_status_ = robot->gripper_.grasp(open_width, open_speed, gripper_traj_generator->getForce(),
 			              0.1, 0.1);
     }
   } else {
-    return_status_ = gripper->move(open_width, open_speed);
+    return_status_ = robot->gripper_.move(open_width, open_speed);
   }
 
   // TODO(Jacky): Why is this needed since grasp and move commands are blocking?

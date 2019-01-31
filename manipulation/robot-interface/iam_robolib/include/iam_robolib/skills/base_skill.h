@@ -1,8 +1,7 @@
 #ifndef IAM_ROBOLIB_SKILLS_BASE_SKILL_H_
 #define IAM_ROBOLIB_SKILLS_BASE_SKILL_H_
 
-#include <franka/gripper.h>
-#include <franka/robot.h>
+#include "iam_robolib/robots/franka_robot.h"
 
 enum class SkillStatus { TO_START, RUNNING, FINISHED };  // enum class
 
@@ -59,7 +58,7 @@ class BaseSkill {
    * @param feedback_controller
    * @param termination_handler
    */
-  void start_skill(franka::Robot* robot,
+  void start_skill(Robot* robot,
                    TrajectoryGenerator *traj_generator,
                    FeedbackController *feedback_controller,
                    TerminationHandler *termination_handler);
@@ -72,13 +71,14 @@ class BaseSkill {
    * @param gripper
    * @param robot_state_data
    */
-  virtual void execute_skill_on_franka(franka::Robot *robot, franka::Gripper *gripper,
+  virtual void execute_skill_on_franka(FrankaRobot *robot,
                                        RobotStateData *robot_state_data) = 0;
 
   virtual bool should_terminate();
 
   virtual void write_result_to_shared_memory(float *result_buffer);
-  virtual void write_result_to_shared_memory(float *result_buffer, franka::Robot *robot);
+  virtual void write_result_to_shared_memory(float *result_buffer, FrankaRobot *robot);
+  virtual void write_result_to_shared_memory(float *result_buffer, Robot *robot);
 
   virtual void write_feedback_to_shared_memory(float *feedback_buffer);
 

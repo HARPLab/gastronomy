@@ -4,7 +4,6 @@
 
 #include <iam_robolib_common/run_loop_process_info.h>
 
-#include <iostream>
 #include <cstring>
 
 void RunLoopProcessInfo::set_new_skill_available(bool new_skill_available) {
@@ -138,8 +137,7 @@ void RunLoopProcessInfo::set_new_meta_skill_id(int new_meta_skill_id) {
   new_meta_skill_id_ = new_meta_skill_id;
 }
 
-void RunLoopProcessInfo::set_new_skill_description(std::string description){
-  std::cout << description << std::endl;
+void RunLoopProcessInfo::set_new_skill_description(std::string description){  
   std::memcpy(&new_skill_description_, description.c_str(), description.size());
   new_skill_description_len_  = description.size();
 }

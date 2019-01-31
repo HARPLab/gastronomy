@@ -20,7 +20,7 @@ class FinalJointTerminationHandler :public TerminationHandler{
   /**
    * Initialize termination handler after parameter parsing.
    */
-  void initialize_handler(franka::Robot *robot) override;
+  void initialize_handler_on_franka(FrankaRobot *robot) override;
 
   /**
    * Should we terminate the current skill.
@@ -30,7 +30,7 @@ class FinalJointTerminationHandler :public TerminationHandler{
   /**
    * Should we terminate the current skill.
    */
-  bool should_terminate(const franka::RobotState &robot_state, TrajectoryGenerator *traj_generator) override;
+  bool should_terminate_on_franka(const franka::RobotState &robot_state, TrajectoryGenerator *traj_generator) override;
 
  private:
   double buffer_time_ = 0.0;
