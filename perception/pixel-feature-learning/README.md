@@ -43,7 +43,7 @@ pip install imgaug
 Source these two file before running:
 ```
 source ~/virtualenvs/pci_venv/bin/activate
-source ~/git/pytorch-dense-correspondence/config/setup_environment.sh
+source ~/git/gastronomy/perception/pixel-feature-learning/config/setup_environment.sh
 ```
 
 #### 3.1 Data
