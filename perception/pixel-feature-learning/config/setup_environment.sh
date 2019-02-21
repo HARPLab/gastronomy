@@ -1,5 +1,4 @@
-export DC_SOURCE_DIR=~/git/pytorch-dense-correspondence
-
+export DC_SOURCE_DIR=~/git/gastronomy/perception/pixel-feature-learning
 export PYTHONPATH=$PYTHONPATH:$DC_SOURCE_DIR/modules
 export PYTHONPATH=$PYTHONPATH:$DC_SOURCE_DIR
 export PATH=$PATH:$DC_SOURCE_DIR/bin
