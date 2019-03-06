@@ -64,35 +64,27 @@ int main(int argc, char **argv)
   double update_rate_hz, step_size_meters;
   std::string robot_type, link_prefix;
   // how frequently do we send a (possibly new) target to the jacobian_controller
-  // (which itself has a timer for how frequently to send commands to domus)
+  // (which itself has a timer for how frequently to send commands to the robot)
   // don't forget to set a default value for these, in case you start from the command line! :)
   ros::param::param<double>("~update_rate_hz", update_rate_hz, 10);
   ros::param::param<double>("~step_size_meters", step_size_meters, 0.01);
-  ros::param::param<std::string>("~robot_type", robot_type, "niryo");
+  ros::param::param<std::string>("~robot_type", robot_type, "simulated");
   ros::param::param<std::string>("~link_prefix", link_prefix, "");
 
   RobotInterface* robot_interface;
-  NiryoRobotParams robot_params;
-  if (robot_type == "niryo")
-  { 
-    std::cout << "Running code on a standard Niryo robot";
-    robot_interface = new RosRobotInterface("niryo_one_follow_joint_trajectory_controller/follow_joint_trajectory", robot_params);
-  } else if (robot_type == "ur5") { 
+  UR5RobotParams ur5_robot_params;
+  if (robot_type == "ur5") { 
     std::cout << "Running code on a UR5 robot";
-    UR5RobotParams ur5_robot_params;
     robot_interface = new RosRobotInterface("arm_controller/follow_joint_trajectory", ur5_robot_params);
-  } else if (robot_type == "custom_domus") {
-    std::cout << "Running code on a custom Domus robot";
-    robot_interface = new CustomDomusInterface(&n, robot_params);
   } else {
     std::cout << "Simulating code without connecting to any robot";
-    robot_interface = new JointEchoingInterface(&n, robot_params);
+    robot_interface = new JointEchoingInterface(&n, ur5_robot_params);
   }
   ros::AsyncSpinner spinner(1); // use 1 thread async for callbacks
   spinner.start();
-  std::cout << "Waiting 5 sec for DomusInterface in case it's slow to come up";
+  std::cout << "Waiting 5 sec for RobotInterface in case it's slow to come up";
   ros::Duration(5).sleep();
-  std::cout << "Done waiting 5 sec for DomusInterface in case it's slow to come up";
+  std::cout << "Done waiting 5 sec for RobotInterface in case it's slow to come up";
   TrackPoseService trackPoseService(update_rate_hz, step_size_meters, robot_interface, &n, link_prefix);
   std::cout << "Waiting for trackPoseService in case it's slow to come up" << std::endl;
   ros::Duration(5).sleep();

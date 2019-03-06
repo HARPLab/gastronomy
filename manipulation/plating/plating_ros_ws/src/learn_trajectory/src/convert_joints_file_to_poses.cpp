@@ -6,25 +6,26 @@
 #include <learn_trajectory/convert_joints_file_to_poses.h>
 
 //constructor
-ConvertJointFileToPoses::ConvertJointFileToPoses(std::string filename)
+ConvertJointFileToPoses::ConvertJointFileToPoses(std::string filename, std::string moveit_group, std::string end_effector_link)
   : robot_model_loader_("robot_description")
 {
   kinematic_model_ = robot_model_loader_.getModel();
   kinematic_state_ = robot_state::RobotStatePtr(new robot_state::RobotState(kinematic_model_));
   kinematic_state_->setToDefaultValues();
-  joint_model_group_ = kinematic_model_->getJointModelGroup("arm");
+  joint_model_group_ = kinematic_model_->getJointModelGroup(moveit_group);
 
   std::vector<double> initial_joint_values { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   kinematic_state_->setJointGroupPositions(joint_model_group_, initial_joint_values);  
-
-  current_pose_ = kinematic_state_->getGlobalLinkTransform("spoon_link");
+  
+  end_effector_link_ = end_effector_link;
+  current_pose_ = kinematic_state_->getGlobalLinkTransform(end_effector_link_);
   joints_file_name_ = filename;
 }
 
 void ConvertJointFileToPoses::WriteLineToFile(double time, std::vector<double> &joint_state, std::ofstream &outfile)
 {
   kinematic_state_->setJointGroupPositions(joint_model_group_, joint_state);  
-  current_pose_ = kinematic_state_->getGlobalLinkTransform("spoon_link");
+  current_pose_ = kinematic_state_->getGlobalLinkTransform(end_effector_link_);
   outfile << std::setprecision (15) << time;
   
   for (int i = 0; i < 3; i++)
@@ -48,7 +49,7 @@ void ConvertJointFileToPoses::WritePoseFile()
   std::ofstream outfile;
   std::string path = ros::package::getPath("learn_trajectory");
   myfile.open(path + "/data/" + joints_file_name_);
-  outfile.open(path + "/data/spoon_poses.txt");
+  outfile.open(path + "/data/pose_data.txt");
   double next_float, time;
   std::vector<double> joint_state;
   int indx_count = 0;
@@ -76,6 +77,11 @@ void ConvertJointFileToPoses::WritePoseFile()
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "convert_joint_file_to_poses");
-  ConvertJointFileToPoses converter("joints_data_right.txt");
+  ros::NodeHandle nh;
+  std::string moveit_group, end_effector_link;
+  ros::param::get("~moveit_group", moveit_group);
+  ros::param::get("~end_effector_link", end_effector_link);
+  ros::Duration(1).sleep();
+  ConvertJointFileToPoses converter("joints_data.txt", moveit_group, end_effector_link);
   converter.WritePoseFile();
 }

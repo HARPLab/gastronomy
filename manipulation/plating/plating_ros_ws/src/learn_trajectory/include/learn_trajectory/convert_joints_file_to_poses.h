@@ -19,12 +19,12 @@
 class ConvertJointFileToPoses 
 {
   public:
-    ConvertJointFileToPoses(std::string filename);
+    ConvertJointFileToPoses(std::string filename, std::string moveit_group, std::string end_effector_link);
     void WritePoseFile();
     void WriteLineToFile(double time, std::vector<double> &joint_state, std::ofstream &outfile);
 
   private:
-    std::string joints_file_name_;
+    std::string joints_file_name_, end_effector_link_;
     Eigen::Affine3d current_pose_;
     robot_state::RobotStatePtr kinematic_state_;
     const robot_state::JointModelGroup* joint_model_group_;

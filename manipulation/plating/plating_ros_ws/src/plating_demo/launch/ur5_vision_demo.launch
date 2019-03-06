@@ -1,0 +1,26 @@
+<launch>
+  <arg name="sim"/>
+  <arg name="robot_ip" default="192.168.1.10"/>
+
+  <param name="/use_sim_time" value="true" if="$(arg sim)"/>
+
+  <!-- connect to or simulate a robot -->
+  <include file="$(find plating_demo)/launch/ur5_bringup.launch">
+    <arg name="sim" value="$(arg sim)" />
+    <arg name="robot_ip" value="$(arg robot_ip)" />
+  </include>
+  
+  <include file="$(find plating_demo)/launch/realsense_camera_rgb.launch" unless="$(arg sim)"/>
+  
+  <node name="publish_food_location" pkg="food_perception" type="publish_food_location" output="screen">
+    <param name="camera_topic" value="/camera/color/image_raw"/>
+    <param name="table_frame_id" value="table_top"/>
+    <param name="positive_img_filenames" value="$(find food_perception)/test/input_data/DemoTomatoSmall.png,$(find food_perception)/test/input_data/DemoMozzSmall.png"/>
+    <param name="negative_img_filename" value="$(find food_perception)/test/input_data/DemoBlueBlackBackgroundSmall.png"/>
+    <param name="roi_polygon" value="(-0.013,0.490), (-0.013,0.720), (-0.363,0.720), (-0.363,0.490)"/>
+  </node>
+
+  <node name="run_plating_logic" pkg="plating_demo" type="run_ur5_vision_demo.py" output="screen">
+    <param name="sim" value="$(arg sim)"/>
+  </node>
+</launch>

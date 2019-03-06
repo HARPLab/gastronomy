@@ -19,12 +19,16 @@ TEST(TestSuite, quat_distance_function)
   Eigen::Quaternion<double> q_0(Eigen::AngleAxis<double>(0, axis_a)), 
                      q_1(Eigen::AngleAxis<double>(M_PI,axis_a)), 
                      q_2(Eigen::AngleAxis<double>(M_PI/2, axis_b)),
-                     q_3(Eigen::AngleAxis<double>(M_PI/2, axis_a));
+                     q_3(Eigen::AngleAxis<double>(M_PI/2, axis_a)),
+                     q_4(Eigen::AngleAxis<double>(3*M_PI/2, axis_a));
   EXPECT_FLOAT_EQ(quat_distance(q_0, q_0), 0);
   EXPECT_FLOAT_EQ(quat_distance(q_0, q_1), M_PI);
   EXPECT_FLOAT_EQ(quat_distance(q_0, q_2), M_PI/2);
   EXPECT_FLOAT_EQ(quat_distance(q_1, q_2), M_PI);
   EXPECT_FLOAT_EQ(quat_distance(q_1, q_3), M_PI/2);
+  EXPECT_FLOAT_EQ(quat_distance(q_3, q_1), M_PI/2);
+  // TRAVERS added this test case 2019-02-15 since this problem was seen in the wild. Distance should always be between 0 and PI.
+  EXPECT_FLOAT_EQ(quat_distance(q_4, q_0), M_PI/2);
 }
 
 TEST(TestSuite, jacob_from_cyl_to_rect)

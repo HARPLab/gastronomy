@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(learn_trajectory)
-# build debug flags
-set (CMAKE_CXX_FLAGS "-g")
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -140,8 +138,6 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(convert_joints_file_to_poses_node src/convert_joints_file_to_poses.cpp)
-add_executable(convert_both_joints_file_to_poses_node src/convert_both_joints_file_to_poses.cpp)
-add_executable(run_poses_directly_node src/run_poses_directly.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -155,18 +151,6 @@ add_executable(run_poses_directly_node src/run_poses_directly.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(convert_joints_file_to_poses_node
-  ${catkin_LIBRARIES}
-  Eigen3::Eigen
-)
-
-target_link_libraries(convert_both_joints_file_to_poses_node
-  ${catkin_LIBRARIES}
-  Eigen3::Eigen
-)
-
-target_link_libraries(run_poses_directly_node
-  feedbot_trajectory_logic
-  Eigen3::Eigen
   ${catkin_LIBRARIES}
 )
 

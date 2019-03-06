@@ -1,0 +1,31 @@
+<launch>
+  <arg name="sim"/>
+  <arg name="robot_ip" default="192.168.1.10"/>
+
+  <!-- connect to or simulate a robot -->
+  <include file="$(find plating_demo)/launch/ur5_gazebo.launch" if="$(arg sim)"/>
+  <group unless="$(arg sim)">
+    <include file="$(find plating_demo)/launch/ur5_ros_control.launch">
+      <arg name="robot_ip" value="$(arg robot_ip)" />
+    </include>
+  </group>
+
+  <!-- visualize the robot -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find plating_demo)/config/ur5_demo.rviz" /> -->
+
+  <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find plating_demo)/urdf/ur5e_robot.urdf.xacro" />
+  <!-- The semantic description that corresponds to the URDF -->
+  <param name="robot_description_semantic" textfile="$(find plating_demo)/config/ur5e.srdf" />
+
+  <!-- set up a service to forward goal locations to commands to the robot -->
+  <node name="track_pose_service" pkg="feedbot_trajectory_logic" type="track_pose_service" respawn="false" output="screen">
+    <!--launch-prefix="/home/travers/run_tmux.sh">-->
+    <param name="update_rate_hz" type="double" value="10"/>
+    <param name="step_size_meters" type="double" value="0.03"/>
+    <param name="robot_type" type="string" value="ur5"/> <!--"ur5", or "sim" !-->
+  </node>
+
+  <!-- set up a service that can read in text files and create goal poses -->
+  <node name="play_trajectory_service" pkg="learn_trajectory" type="play_trajectory_server.py" output="screen"/>
+</launch>

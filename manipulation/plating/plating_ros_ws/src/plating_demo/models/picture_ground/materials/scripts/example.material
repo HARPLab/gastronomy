@@ -1,0 +1,14 @@
+material SimpleImage 
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture RealFood.jpg
+        scale 0.5 0.5
+      }
+    }
+  }
+}

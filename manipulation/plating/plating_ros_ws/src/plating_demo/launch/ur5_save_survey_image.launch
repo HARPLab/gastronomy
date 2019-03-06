@@ -1,0 +1,16 @@
+<launch>
+  <arg name="sim"/>
+  <arg name="robot_ip" default="192.168.1.10"/>
+
+  <param name="/use_sim_time" value="true" if="$(arg sim)"/>
+
+  <!-- connect to or simulate a robot -->
+  <include file="$(find plating_demo)/launch/ur5_bringup.launch">
+    <arg name="sim" value="$(arg sim)" />
+    <arg name="robot_ip" value="$(arg robot_ip)" />
+  </include>
+  
+  <include file="$(find plating_demo)/launch/realsense_camera_rgb.launch" unless="$(arg sim)"/>
+
+  <node name="save_survey_image" pkg="plating_demo" type="save_survey_image.py" output="screen"/>
+</launch>

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<sdf version="1.5">
+  <model name="picture_ground">
+    <static>true</static>
+      <link name="link">
+        <visual name="visual">
+          <cast_shadows>false</cast_shadows>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>2 2</size>
+            </plane>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://picture_ground/materials/scripts</uri>
+              <uri>model://picture_ground/materials/textures</uri>
+              <name>SimpleImage</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+</sdf>

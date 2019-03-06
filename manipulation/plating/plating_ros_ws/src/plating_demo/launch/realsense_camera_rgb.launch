@@ -1,0 +1,15 @@
+<launch>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="enable_fisheye" value="false"/>
+    <arg name="enable_depth" value="false"/>
+    <arg name="enable_infra1" value="false"/>
+    <arg name="enable_infra2" value="false"/>
+    <arg name="enable_gyro" value="false"/>
+    <arg name="enable_accel" value="false"/>
+
+    <arg name="enable_color" value="true"/>
+    
+    <!-- https://github.com/intel-ros/realsense/issues/528 -->
+    <arg name="initial_reset" value="true"/>
+  </include>
+</launch>

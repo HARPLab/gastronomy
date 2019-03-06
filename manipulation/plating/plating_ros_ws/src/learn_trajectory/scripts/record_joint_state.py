@@ -11,10 +11,9 @@ def callback(msg, f):
 
 def main():
   rospy.init_node('joint_state_listener', anonymous=True)
-  timestr = time.strftime("%Y%m%d-%H%M%S")
   r = rospkg.RosPack()
   path = r.get_path("learn_trajectory")
-  recording_file = path + "/data/joints_data_right.txt"
+  recording_file = path + "/data/joints_data.txt"
   with open(recording_file, "w+") as f:
     rospy.Subscriber("/joint_states", JointState, callback, (f))
     rospy.spin();

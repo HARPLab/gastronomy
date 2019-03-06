@@ -104,7 +104,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES plating_demo
-#  CATKIN_DEPENDS feedbot_trajectory_logic niryo_one_ros rospy
+#  CATKIN_DEPENDS feedbot_trajectory_logic rospy
 #  DEPENDS system_lib
 )
 

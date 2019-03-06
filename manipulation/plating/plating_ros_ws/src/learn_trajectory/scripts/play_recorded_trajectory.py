@@ -38,7 +38,8 @@ def publish_poses(poseFile, pose_topic):
   curTime = rospy.Time.now().to_sec() - starttime
   target_pub = rospy.Publisher(pose_topic, Pose, queue_size=10)
   pos_pub = rospy.Publisher("target_pose", PoseStamped, queue_size=10)
-  r = rospy.Rate(10) # publish at max 10hz
+  r = rospy.Rate(500) # publish at same speed as recording hz (10hz for niryo)
+  r = rospy.Rate(10) # publish at SLOWER speed than recording hz (10hz for niryo)
   curRow = 0
   while curRow < pos_list.shape[0] and not rospy.is_shutdown():
     #print(curTime, lasttime)
@@ -59,10 +60,7 @@ def publish_poses(poseFile, pose_topic):
 
     #rospy.logwarn(curRot)
 
-    # I think this the identity transformation
-    curQuat = t3d.quaternions.qmult(curQuat,[1,0,0,0])
-    # I wish I had documented the black magic I did here to estimate
-    # the prong location of the fork
+    #curQuat = t3d.quaternions.qmult(curQuat,[0,0,0,1])
     pose = Pose(Point(pos[0],pos[1],pos[2]),
                 Quaternion(curQuat[1],curQuat[2],curQuat[3],curQuat[0]))
 

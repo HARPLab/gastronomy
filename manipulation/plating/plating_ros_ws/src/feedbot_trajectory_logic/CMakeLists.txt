@@ -15,8 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   std_msgs
-  serial
-  interactive_markers
   visualization_msgs
   tf
 )
@@ -26,7 +24,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## https://github.com/wsnewman/learning_ros/blob/master/Part_2/example_eigen/CMakeLists.txt
 find_package(Eigen3 REQUIRED)
 find_package(rostest REQUIRED)
-find_package(yaml-cpp REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 add_definitions(${EIGEN_DEFINITIONS})
 
@@ -60,10 +57,9 @@ catkin_python_setup()
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  JointAngles.msg
-)
+#add_message_files(
+#  FILES
+#)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -116,8 +112,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES feedbot_trajectory_logic 
-#  CATKIN_DEPENDS moveit_msgs moveit_ros_planning_interface niryo_one_moveit_config roscpp
+  LIBRARIES feedbot_trajectory_logic 
+#  CATKIN_DEPENDS 
 #  DEPENDS system_lib
 )
 
@@ -137,7 +133,6 @@ add_library(${PROJECT_NAME}
    src/jacobian_controller.cpp
    src/robot_interface.cpp
    src/joint_echoing_interface.cpp
-   src/custom_domus_interface.cpp
    src/ros_robot_interface.cpp
    src/transform_helpers.cpp
 )
@@ -151,8 +146,6 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(track_pose_service src/track_pose_service.cpp)
-add_executable(domus_controller src/domus_controller.cpp)
-add_executable(interactive_calibration src/interactive_calibration.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -170,17 +163,7 @@ target_link_libraries(track_pose_service
    ${catkin_LIBRARIES}
 )
 
-target_link_libraries(domus_controller
-   feedbot_trajectory_logic
-   ${catkin_LIBRARIES}
-)
-
 target_link_libraries(feedbot_trajectory_logic
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(interactive_calibration
-   yaml-cpp
    ${catkin_LIBRARIES}
 )
 

@@ -1,0 +1,9 @@
+<launch>
+  <node name="publish_food_location" pkg="food_perception" type="publish_food_location" output="screen">
+    <param name="camera_topic" value="/image_raw"/>
+    <param name="table_frame_id" value="base_link"/>
+    <param name="positive_img_filenames" value="$(find food_perception)/test/input_data/SmallRed.png"/>
+    <param name="negative_img_filename" value="$(find food_perception)/test/input_data/SmallBlue.png"/>
+    <param name="roi_polygon" value="(0,0), (0,-10), (-10,-10), (-10,0)"/>
+  </node>
+</launch>

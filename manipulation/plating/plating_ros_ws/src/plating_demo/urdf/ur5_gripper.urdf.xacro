@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="ur5_gripper" params="prefix">
+    <link name="${prefix}hand_link">
+      <visual>
+        <geometry>
+          <mesh filename="package://plating_demo/meshes/robotiq_hand_e.STL" />
+        </geometry>
+        <material name="LightGrey">
+          <color rgba="0.7 0.7 0.7 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://plating_demo/meshes/robotiq_hand_e.STL" />
+        </geometry>
+      </collision>
+      <!-- pulled from https://robotiq.com/support/hand-e-adaptive-robot-gripper/documents-gripper-instruction-manual-e-series -->
+      <inertial>
+        <mass value="1.090"/>
+        <inertia ixx="0.005341" ixy="0" ixz="0" iyy="0.005447" iyz="0" izz="0.000636"/>
+        <origin xyz="0.0 0.0 0.0575" rpy="0.0 0.0 0.0" />
+      </inertial>
+    </link>
+ 
+    <joint name="${prefix}hand_wrist_fixed_joint" type="fixed">
+      <parent link="${prefix}wrist_3_link" />
+      <child link = "${prefix}hand_link" />
+      <!-- we fudge the length to make the two line up (probably because origin of hand is in rando place --> 
+      <!-- TSR 2019-02-20 calibrated this length by moving robot to known position and measuring actual height of hand above table -->
+      <origin xyz="0.0 ${0.100 + 0.1005 - 0.0075 + 0.007} 0.0" rpy="0.0 ${-pi/2.0} 0.0" />
+    </joint>
+
+
+    <link name="${prefix}grasp_joint_center_fixed"/>
+
+    <joint name="${prefix}grasp_joint_center_fixed_joint" type="fixed">
+      <parent link="${prefix}hand_link" />
+      <child link = "${prefix}grasp_joint_center_fixed" />
+      <origin xyz="0.0 ${0.046 + 0.015} 0.0" rpy="0.0 0.0 ${-pi/2.0}" />
+    </joint>
+    
+    <link name="${prefix}grasp_point_fixed"/>
+
+    <joint name="${prefix}grasp_point_fixed_joint" type="fixed">
+      <parent link="${prefix}hand_link" />
+      <child link = "${prefix}grasp_point_fixed" />
+      <origin xyz="0.0 ${0.046 + 0.015} 0.0" rpy="${-pi/2.0} 0.0 0.0" />
+    </joint>
+    
+    <link name="${prefix}finger_l_link">
+      <visual>
+        <geometry>
+          <mesh filename="package://plating_demo/meshes/hand_e_finger.STL" />
+        </geometry>
+        <material name="LightGrey">
+          <color rgba="0.7 0.7 0.7 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://plating_demo/meshes/hand_e_finger.STL" />
+        </geometry>
+      </collision>
+      <!-- lazy guess -->
+      <xacro:cylinder_inertial radius="0.005" length="0.01" mass="0.001">
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      </xacro:cylinder_inertial>
+    </link>
+
+    <link name="${prefix}finger_r_link">
+      <visual>
+        <geometry>
+          <mesh filename="package://plating_demo/meshes/hand_e_finger.STL" />
+        </geometry>
+        <material name="LightGrey">
+          <color rgba="0.7 0.7 0.7 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://plating_demo/meshes/hand_e_finger.STL" />
+        </geometry>
+      </collision>
+      <!-- lazy guess -->
+      <xacro:cylinder_inertial radius="0.005" length="0.01" mass="0.001">
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      </xacro:cylinder_inertial>
+    </link>
+    
+    <joint name="${prefix}finger_l_joint" type="prismatic">
+      <parent link="${prefix}grasp_joint_center_fixed" />
+      <child link = "${prefix}finger_l_link" />
+      <origin xyz="0.0 0.0 -0.0059" rpy="0.0 0.0 0.0" />
+      <limit lower="0" upper="0.020" effort="150.0" velocity="1.0"/>
+      <!-- align motion on z-axis to match vrep's expectation -->
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <joint name="${prefix}finger_r_joint" type="prismatic">
+      <parent link="${prefix}grasp_joint_center_fixed" />
+      <child link = "${prefix}finger_r_link" />
+      <origin xyz="0.0 0.0 0.0059" rpy="${pi} 0.0 0.0" />
+      <limit lower="0" upper="0.020" effort="150.0" velocity="1.0"/>
+      <!-- align motion on z-axis to match vrep's expectation -->
+      <axis xyz="0 0 1"/>
+    </joint>
+  </xacro:macro>
+</robot>

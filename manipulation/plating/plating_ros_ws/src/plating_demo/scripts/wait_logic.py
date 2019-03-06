@@ -47,7 +47,7 @@ class TopicBasedWaitLogic(WaitLogic):
     self.last_topic_value = message.data
 
 class DistanceBasedWaitLogic(TopicBasedWaitLogic):
-  def __init__(self, distance_to_goal_topic = "/distance_to_target", epsilon=0.02):
+  def __init__(self, distance_to_goal_topic = "/distance_to_target", epsilon=0.001):
     self.epsilon = epsilon
     # super nicely generates a self.last_topic_value attribute for us.
     super(DistanceBasedWaitLogic, self).__init__(distance_to_goal_topic, Float64)

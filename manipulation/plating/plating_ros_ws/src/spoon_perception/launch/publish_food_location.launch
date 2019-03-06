@@ -1,6 +1,0 @@
-<launch>
-  <node name="publish_food_location" pkg="spoon_perception" type="publish_food_location" output="screen">
-    <param name="camera_topic" value="/niryo_one/spoon_camera/image_raw"/>
-    <param name="table_frame_id" value="base_link"/>
-  </node>
-</launch>

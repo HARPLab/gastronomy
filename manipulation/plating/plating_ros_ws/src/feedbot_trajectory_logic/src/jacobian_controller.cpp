@@ -84,6 +84,20 @@ JacobianController::make_step_to_target_pose(const geometry_msgs::Pose &target_p
   Eigen::AngleAxisd rot_axis_angle(rot_diff);
   double rot_angle = rot_axis_angle.angle();
   Eigen::Vector3d rot_axis = rot_axis_angle.axis();
+  
+  // TSR is ashamed that this is not in a testable helper function.
+  // Maybe this is just an issue with "old" Eigen... (optimism)
+  if (rot_angle < 0)
+  {
+    rot_angle *= -1.0;
+    rot_axis = rot_axis *= -1.0;
+  }
+
+  if (rot_angle > M_PI)
+  {
+    rot_angle = 2 * M_PI - rot_angle;
+    rot_axis = rot_axis *= -1;
+  }
 
   // cylindrical_diff is of the form dR, dTheta, dZ
   // where R is sqrt(x^2 + y^2), theta is arctan2(y,x), and z is z
@@ -169,7 +183,7 @@ JacobianController::get_joint_delta(Eigen::Vector3d cylindrical_diff, double rot
   // use regularized least squares to compute the required joint angle changes
   //https://eigen.tuxfamily.org/dox/group__LeastSquares.html
   // with the extra addition that we use a tiny regularization term to reduce problems due to singularities, so we're solving (J^T J + lambda * I)^-1 J^T Y
-  double lambda = 0.1;
+  double lambda = 0.02;
   Eigen::VectorXd joint_delta = (jacobian.transpose() * jacobian + (lambda * Eigen::MatrixXd::Identity(6,6))).ldlt().solve(jacobian.transpose() * target_delta);
   return joint_delta;
 }

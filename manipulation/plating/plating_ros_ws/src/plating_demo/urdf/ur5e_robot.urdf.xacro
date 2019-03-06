@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro"
+       name="ur5e" >
+
+  <!-- common stuff -->
+  <xacro:include filename="$(find ur_e_description)/urdf/common.gazebo.xacro" />
+
+  <!-- ur5e -->
+  <xacro:include filename="$(find ur_e_description)/urdf/ur5e.urdf.xacro" />
+  
+  <!-- arm -->
+  <xacro:ur5e_robot prefix="" joint_limited="false"/>
+
+  <xacro:include filename="$(find plating_demo)/urdf/ur5_camera.urdf.xacro" />
+  
+  <xacro:ur5_camera prefix=""/>
+  
+  <xacro:include filename="$(find plating_demo)/urdf/ur5_gripper.urdf.xacro" />
+  
+  <xacro:ur5_gripper prefix=""/>
+  
+  <xacro:include filename="$(find plating_demo)/urdf/ur5_fork.urdf.xacro" />
+  
+  <xacro:ur5_fork prefix=""/>
+
+  <xacro:include filename="$(find plating_demo)/urdf/ur5_camera.gazebo.xacro"/>
+ 
+  <xacro:ur5_camera_gazebo camera_frame="camera_color_frame" camera_optical_frame="camera_color_optical_frame"/>
+
+  <!-- realsense camera --> 
+  <xacro:include filename="$(find realsense2_camera)/urdf/_d435.urdf.xacro" />
+
+  <!-- see http://wiki.ros.org/xacro for an explanation of the syntax of starred parameter passing -->
+  <xacro:sensor_d435 parent="camera_holder">
+    <!-- easier computation because right angles now-->
+    <origin xyz="0 0.018 -0.038" rpy="0 ${-pi/2} ${-pi/2}"/>
+  </xacro:sensor_d435>
+
+  <link name="table_top"/>
+  
+  <joint name="table_top_joint" type="fixed">
+    <parent link="table_top" />
+    <child link = "base_link" />
+    <!-- robot is mounted 22.5mm above the table surface -->
+    <!-- it's mounted on https://s3.amazonaws.com/ventionblobs/parts/pdf/ST-RB-001-0003.PDF -->
+    <origin xyz="0.0 0.0 0.0225" rpy="0.0 0.0 0.0" />
+  </joint>
+
+  <link name="world" />
+
+  <joint name="world_joint" type="fixed">
+    <parent link="world" />
+    <child link = "table_top" />
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
+
+</robot>

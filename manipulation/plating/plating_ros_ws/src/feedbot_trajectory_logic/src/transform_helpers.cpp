@@ -7,6 +7,14 @@ double quat_distance(const Eigen::Quaterniond &cur_quat, const Eigen::Quaternion
   Eigen::Quaterniond diff =  cur_quat.inverse() * end_quat;
   Eigen::AngleAxisd rot_axis_angle(diff);
   double rot_angle = rot_axis_angle.angle();
+  rot_angle = fabs(rot_angle);
+  if (rot_angle > M_PI)
+  {
+    // I'm shocked this was never a problem before...
+    // But we want absolute value of the smallest distance
+    // That is, we want 2 PI - angle if angle greater than PI
+    rot_angle = 2 * M_PI - rot_angle;
+  }
   return rot_angle; 
 }
 
