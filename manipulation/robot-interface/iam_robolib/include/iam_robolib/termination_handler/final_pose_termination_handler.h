@@ -1,6 +1,8 @@
 #ifndef IAM_ROBOLIB_TERMINATION_HANDLER_FINAL_POSE_TERMINATION_HANDLER_H_
 #define IAM_ROBOLIB_TERMINATION_HANDLER_FINAL_POSE_TERMINATION_HANDLER_H_
 
+#include <Eigen/Dense>
+
 #include "iam_robolib/termination_handler/termination_handler.h"
 
 class FinalPoseTerminationHandler : public TerminationHandler {
@@ -30,10 +32,17 @@ class FinalPoseTerminationHandler : public TerminationHandler {
   /**
    * Should we terminate the current skill.
    */
-  bool should_terminate_on_franka(const franka::RobotState &robot_state, TrajectoryGenerator *traj_generator) override;
+  virtual bool should_terminate_on_franka(const franka::RobotState &robot_state, 
+                                          franka::Model *robot_model,
+                                          TrajectoryGenerator *traj_generator) override;
 
  private:
-  std::array<double, 16> pose_final_{};
+  int num_params_;
+  double buffer_time_ = 0.0;
+  double position_threshold_ = 0.001;
+  double orientation_threshold_ = 0.001;
+  Eigen::Vector3d position_thresholds_;
+  Eigen::Vector3d orientation_thresholds_;
 };
 
 #endif  // IAM_ROBOLIB_TERMINATION_HANDLER_FINAL_POSE_TERMINATION_HANDLER_H_

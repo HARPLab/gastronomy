@@ -28,6 +28,7 @@ Compiled source #
 *.log
 *.sql
 *.sqlite
+logs/*
 
 # OS generated files #
 ######################
@@ -61,8 +62,8 @@ CMakeCache.txt
 iam_robolib/cmake-build-debug/
 
 # Add workspace build files
-src/catkin_ws/build
-src/catkin_ws/devel
+catkin_ws/build
+catkin_ws/devel
 
 build
 Release
@@ -72,3 +73,16 @@ iam_robolib_common/build
 
 # Ipython notebook ignore
 notebooks/.ipynb_checkpoints
+
+*cmake-build-debug
+*imgui.ini
+*egg-info
+
+# Vscode
+.vscode
+
+# Saved data
+catkin_ws/src/franka_action_lib/out*
+
+# Docker
+.docker_tmp

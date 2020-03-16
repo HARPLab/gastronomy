@@ -46,12 +46,11 @@ public:
 class UR5eRobot : public Robot
 {
  public:
-  UR5eRobot(std::string &robot_ip, RobotType robot_type) : Robot(robot_ip, robot_type),
-                                                           factory_(robot_ip),
-                                                           rt_receive_stream_(robot_ip, UR_RT_RECEIVE_PORT_),
-                                                           rt_transmit_stream_(robot_ip, UR_RT_TRANSMIT_PORT_)
-
-
+  UR5eRobot(std::string &robot_ip, RobotType robot_type) : 
+                            Robot(robot_ip, robot_type),
+                            rt_transmit_stream_(robot_ip, UR_RT_TRANSMIT_PORT_),
+                            factory_(robot_ip),
+                            rt_receive_stream_(robot_ip, UR_RT_RECEIVE_PORT_)
   {
     std::unique_ptr<URParser<RTPacket>> rt_parser = factory_.getRTParser();
     URProducer<RTPacket> rt_prod(rt_receive_stream_, *rt_parser);
@@ -81,6 +80,11 @@ class UR5eRobot : public Robot
   Pipeline<RTPacket> *rt_pl_;
 
   std::unique_ptr<URCommander> rt_commander_;
+
+  void automaticErrorRecovery() {
+    // TODO(jacky) this hasn't been implemented on UR5e
+    throw "Automatic Error Recovery hasn't been implemented on UR5e!";
+  }
 
  private:
   const int UR_RT_TRANSMIT_PORT_ = 30003;

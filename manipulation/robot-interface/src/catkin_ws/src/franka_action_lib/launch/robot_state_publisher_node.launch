@@ -1,7 +1,0 @@
-<launch>
-
-  <node pkg="franka_action_lib" type="robot_state_publisher_node" name="robot_state_publisher_node" output="screen">
-    <param name="publish_frequency" value="100" />
-  </node>
-
-</launch>

@@ -6,29 +6,50 @@
 
 #include <iostream>
 
-#include "iam_robolib/feedback_controller/custom_gain_torque_controller.h"
+#include <iam_robolib_common/definitions.h>
+
+#include "iam_robolib/feedback_controller/cartesian_impedance_feedback_controller.h"
+#include "iam_robolib/feedback_controller/force_axis_impedence_feedback_controller.h"
+#include "iam_robolib/feedback_controller/joint_impedance_feedback_controller.h"
 #include "iam_robolib/feedback_controller/noop_feedback_controller.h"
-#include "iam_robolib/feedback_controller/torque_feedback_controller.h"
+#include "iam_robolib/feedback_controller/pass_through_feedback_controller.h"
+#include "iam_robolib/feedback_controller/set_internal_impedance_feedback_controller.h"
 
-FeedbackController* FeedbackControllerFactory::getFeedbackControllerForSkill(SharedBuffer buffer){
-  int feedback_controller_id = static_cast<int>(buffer[0]);
+FeedbackController* FeedbackControllerFactory::getFeedbackControllerForSkill(SharedBufferTypePtr buffer){
+  FeedbackControllerType feedback_controller_type = static_cast<FeedbackControllerType>(buffer[0]);
 
-  std::cout << "Feedback Controller id: " << feedback_controller_id << "\n";
+  std::cout << "Feedback Controller Type: " << 
+  static_cast<std::underlying_type<FeedbackControllerType>::type>(feedback_controller_type) << 
+  "\n";
 
   FeedbackController* feedback_controller = nullptr;
-  if (feedback_controller_id == 1) {
-    // Create Counter based trajectory.
-    feedback_controller = new NoopFeedbackController(buffer);
-  } else if (feedback_controller_id == 2) {
-    // Create Counter based trajectory.
-    feedback_controller = new TorqueFeedbackController(buffer);
-  } else if (feedback_controller_id == 3) {
-    feedback_controller = new CustomGainTorqueController(buffer);
-  } else {
-    std::cout << "Cannot create feedback_controller with class_id: " << feedback_controller_id
-      << "\n";
-    return nullptr;
+  switch (feedback_controller_type) {
+    case FeedbackControllerType::NoopFeedbackController:
+      feedback_controller = new NoopFeedbackController(buffer);
+      break;
+    case FeedbackControllerType::CartesianImpedanceFeedbackController:
+      feedback_controller = new CartesianImpedanceFeedbackController(buffer);
+      break;
+    case FeedbackControllerType::JointImpedanceFeedbackController:
+      feedback_controller = new JointImpedanceFeedbackController(buffer);
+      break;
+    case FeedbackControllerType::ForceAxisImpedenceFeedbackController:
+      feedback_controller = new ForceAxisImpedenceFeedbackController(buffer);
+      break;
+    case FeedbackControllerType::PassThroughFeedbackController:
+      feedback_controller = new PassThroughFeedbackController(buffer);
+      break;
+    case FeedbackControllerType::SetInternalImpedanceFeedbackController:
+      feedback_controller = new SetInternalImpedanceFeedbackController(buffer);
+      break;
+    default:
+      std::cout << "Cannot create Feedback Controller with type: " << 
+      static_cast<std::underlying_type<FeedbackControllerType>::type>(feedback_controller_type) << 
+      "\n";
+      return nullptr;
   }
+
   feedback_controller->parse_parameters();
+
   return feedback_controller;
 }

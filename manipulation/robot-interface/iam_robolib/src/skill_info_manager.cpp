@@ -58,3 +58,8 @@ BaseMetaSkill* SkillInfoManager::get_meta_skill_with_id(int meta_skill_id) {
   }
   return nullptr;
 }
+
+void SkillInfoManager::clear_skill_and_meta_skill_list() {
+  skill_list_.clear();
+  meta_skill_list_.clear();
+}

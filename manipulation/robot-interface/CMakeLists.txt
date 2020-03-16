@@ -20,9 +20,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_subdirectory(iam_robolib)
 add_subdirectory(iam_robolib_common)
 add_subdirectory(libfranka)
-# add_subdirectory(src/catkin_ws/src/franka_action_lib)
 
-add_executable(main_iam_robolib main_iam_robolib.cpp)
+add_executable(main_iam_robolib src/main_iam_robolib.cpp)
 
 target_link_libraries(main_iam_robolib 
   iam_robolib 

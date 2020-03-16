@@ -10,16 +10,16 @@
 class FrankaRobot : public Robot
 {
  public:
-  FrankaRobot(std::string &robot_ip, RobotType robot_type) : Robot(robot_ip, robot_type),
-                                                             robot_(robot_ip),
-                                                             gripper_(robot_ip)
-  {
+  FrankaRobot(std::string &robot_ip, RobotType robot_type) : 
+                                               Robot(robot_ip, robot_type),
+                                               robot_(robot_ip),
+                                               gripper_(robot_ip),
+                                               model_(robot_.loadModel()) 
+  {};
 
-  }
-
-  franka::Model getModel()
+  franka::Model* getModel()
   {
-    return robot_.loadModel();
+    return &model_;
   }
 
   franka::RobotState getRobotState()
@@ -34,6 +34,19 @@ class FrankaRobot : public Robot
 
   franka::Robot robot_;
   franka::Gripper gripper_;
+  franka::Model model_;
+
+  void automaticErrorRecovery() {
+    robot_.automaticErrorRecovery();
+  }
+
+  void setJointImpedance(const std::array<double, 7>& K_theta) {
+    robot_.setJointImpedance(K_theta);
+  }
+
+  void setCartesianImpedance(const std::array<double, 6>& K_x) {
+    robot_.setCartesianImpedance(K_x);
+  }
 };
 
 #endif  // IAM_ROBOLIB_ROBOTS_FRANKA_ROBOT_H_

@@ -25,6 +25,8 @@ class SkillInfoManager {
 
   void add_meta_skill(BaseMetaSkill* skill);
 
+  void clear_skill_and_meta_skill_list();
+
   BaseMetaSkill* get_meta_skill_with_id(int meta_skill_id);
 
  private:

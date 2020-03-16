@@ -1,6 +1,3 @@
 [submodule "libfranka"]
 	path = libfranka
 	url = https://github.com/frankaemika/libfranka.git
-[submodule "json"]
-	path = json
-	url = https://github.com/nlohmann/json.git

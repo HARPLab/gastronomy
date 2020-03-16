@@ -1,7 +1,7 @@
 #ifndef IAM_ROBOLIB_FEEDBACK_CONTROLLER_FACTORY_H_
 #define IAM_ROBOLIB_FEEDBACK_CONTROLLER_FACTORY_H_
 
-#include "iam_robolib/definitions.h"
+#include "iam_robolib_common/definitions.h"
 
 class FeedbackController;
 
@@ -16,7 +16,7 @@ class FeedbackControllerFactory {
    * will be stored.
    * @return FeedbackController instance for this skill
    */
-  FeedbackController* getFeedbackControllerForSkill(SharedBuffer buffer);
+  FeedbackController* getFeedbackControllerForSkill(SharedBufferTypePtr buffer);
 
 };
 

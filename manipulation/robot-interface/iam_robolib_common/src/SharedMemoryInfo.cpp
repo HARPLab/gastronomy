@@ -26,6 +26,8 @@ std::string SharedMemoryInfo::getSharedMemoryNameForObjects() {
   return objects_memory_name_;
 }
 
+
+
 std::string SharedMemoryInfo::getSharedMemoryNameForSensorData(int index) {
   if (index == 0) {
     return sensor_data_memory_name_0_;
@@ -60,6 +62,14 @@ std::string SharedMemoryInfo::getRunLoopInfoMutexName() {
   return run_loop_info_mutex_name_;
 }
 
+std::string SharedMemoryInfo::getIAMRobolibStateInfoObjectName() {
+  return iam_robolib_state_info_name_;
+}
+
+std::string SharedMemoryInfo::getIAMRobolibStateInfoMutexName() {
+  return iam_robolib_state_info_mutex_name_;
+}
+
 std::string SharedMemoryInfo::getParameterMemoryMutexName(int index) {
   if (index == 0) {
     return params_memory_mutex_name_0_;
@@ -74,8 +84,6 @@ std::string SharedMemoryInfo::getParameterMemoryMutexName(int index) {
 std::string SharedMemoryInfo::getSensorDataMutexName(int index) {
   if (index == 0) {
     return sensor_data_mutex_name_0_;
-  } else if (index == 1) {
-    return sensor_data_mutex_name_1_;
   } else {
     assert(false);
     return "";
@@ -117,7 +125,7 @@ int SharedMemoryInfo::getObjectMemorySize() {
 }
 
 int SharedMemoryInfo::getExecutionResponseMemorySize() {
-  return execution_response_feedback_size_ + execution_response_return_size_;
+  return execution_response_feedback_size_ + execution_response_result_size_;
 }
 
 int SharedMemoryInfo::getCurrentRobotStateMemorySize() {
@@ -132,13 +140,6 @@ int SharedMemoryInfo::getOffsetForTrajectoryParameters() {
   return 0;
 }
 
-int SharedMemoryInfo::getSizeForTrajectorySensorData() {
-  return trajectory_sensor_data_buffer_size_;
-}
-
-int SharedMemoryInfo::getOffsetForTrajectorySensorData() {
-  return 0;
-}
 
 int SharedMemoryInfo::getSizeForFeedbackControllerParameters() {
   return feedback_controller_params_buffer_size_;
@@ -148,13 +149,7 @@ int SharedMemoryInfo::getOffsetForFeedbackControllerParameters() {
   return trajectory_params_buffer_size_;
 }
 
-int SharedMemoryInfo::getSizeForFeedbackControllerSensorData() {
-  return feedback_controller_sensor_data_buffer_size_;
-}
 
-int SharedMemoryInfo::getOffsetForFeedbackControllerSensorData() {
-  return trajectory_sensor_data_buffer_size_;
-}
 
 int SharedMemoryInfo::getSizeForTerminationParameters() {
   return termination_params_buffer_size_;
@@ -162,14 +157,6 @@ int SharedMemoryInfo::getSizeForTerminationParameters() {
 
 int SharedMemoryInfo::getOffsetForTerminationParameters() {
   return trajectory_params_buffer_size_ + feedback_controller_params_buffer_size_;
-}
-
-int SharedMemoryInfo::getSizeForTerminationSensorData() {
-  return termination_sensor_data_buffer_size_;
-}
-
-int SharedMemoryInfo::getOffsetForTerminationSensorData() {
-  return trajectory_sensor_data_buffer_size_ + feedback_controller_sensor_data_buffer_size_;
 }
 
 int SharedMemoryInfo::getSizeForTimerParameters() {
@@ -182,25 +169,15 @@ int SharedMemoryInfo::getOffsetForTimerParameters() {
     + termination_params_buffer_size_);
 }
 
-int SharedMemoryInfo::getSizeForTimerSensorData() {
-  return timer_sensor_data_buffer_size_;
+int SharedMemoryInfo::getSizeForSensorData()  {
+    return sensor_buffer_size_;
 }
 
-int SharedMemoryInfo::getOffsetForTimerSensorData() {
-  return trajectory_sensor_data_buffer_size_
-      + feedback_controller_sensor_data_buffer_size_
-      + termination_sensor_data_buffer_size_;
-}
-
-int SharedMemoryInfo::getSizeForExtraSensorData() {
-  return extra_sensor_data_buffer_size_;
-}
-
-int SharedMemoryInfo::getOffsetForExtraSensorData() {
-  return trajectory_sensor_data_buffer_size_
-      + feedback_controller_sensor_data_buffer_size_
-      + termination_sensor_data_buffer_size_
-      + timer_sensor_data_buffer_size_;
+int SharedMemoryInfo::getOffsetForSensorData()  {
+  return (trajectory_params_buffer_size_
+          + feedback_controller_params_buffer_size_
+          + termination_params_buffer_size_
+          + timer_params_buffer_size_);
 }
 
 int SharedMemoryInfo::getSizeForExecutionFeedbackData() {
@@ -211,11 +188,11 @@ int SharedMemoryInfo::getOffsetForExecutionFeedbackData() {
   return 0;
 }
 
-int SharedMemoryInfo::getSizeForExecutionReturnData() {
-  return execution_response_return_size_;
+int SharedMemoryInfo::getSizeForExecutionResultData() {
+  return execution_response_result_size_;
 }
 
-int SharedMemoryInfo::getOffsetForExecutionReturnData() {
+int SharedMemoryInfo::getOffsetForExecutionResultData() {
   return execution_response_feedback_size_;
 }
 

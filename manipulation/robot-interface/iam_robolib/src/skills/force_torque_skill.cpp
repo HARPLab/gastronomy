@@ -6,92 +6,96 @@
 
 #include <cassert>
 #include <iostream>
-#include <vector>
 #include <array>
 
 #include <franka/robot.h>
-#include <franka/model.h>
-#include <franka/exception.h>
 
-#include "iam_robolib/termination_handler/termination_handler.h"
-#include "iam_robolib/trajectory_generator/trajectory_generator.h"
-#include "iam_robolib/run_loop.h"
 #include "iam_robolib/robot_state_data.h"
+#include "iam_robolib/run_loop.h"
+#include "iam_robolib/run_loop_shared_memory_handler.h"
+#include "iam_robolib/trajectory_generator/impulse_trajectory_generator.h"
+
+#include <iam_robolib_common/definitions.h>
+#include <iam_robolib_common/run_loop_process_info.h>
 
 void ForceTorqueSkill::execute_skill() {
   assert(false);
 }
 
-void ForceTorqueSkill::execute_skill_on_franka(FrankaRobot* robot,
+void ForceTorqueSkill::execute_skill_on_franka(run_loop* run_loop,
+                                               FrankaRobot* robot,
                                                RobotStateData *robot_state_data) {
+  double time = 0.0;
+  int log_counter = 0;
+  std::array<double, 16> pose_desired;
 
-  try {
-    double time = 0.0;
-    int log_counter = 0;
+  std::cout << "Will run the control loop\n";
 
-    std::cout << "Will run the control loop\n";
+  RunLoopSharedMemoryHandler* shared_memory_handler = run_loop->get_shared_memory_handler();
+  RunLoopProcessInfo* run_loop_info = shared_memory_handler->getRunLoopProcessInfo();
+  boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(
+                                  *(shared_memory_handler->getRunLoopProcessInfoMutex()),
+                                  boost::interprocess::defer_lock);
 
-    franka::Model model = robot->getModel();
+  ImpulseTrajectoryGenerator* impulse_trajectory_generator = dynamic_cast<ImpulseTrajectoryGenerator*>(traj_generator_);
 
-    // get torque offset from gravity
-    franka::RobotState initial_state = robot->getRobotState();
-    Eigen::VectorXd initial_tau_ext(7);
-    std::array<double, 7> gravity_array = model.gravity(initial_state);
-    Eigen::Map<Eigen::Matrix<double, 7, 1> > initial_tau_measured(initial_state.tau_J.data());
-    Eigen::Map<Eigen::Matrix<double, 7, 1> > initial_gravity(gravity_array.data());
-    initial_tau_ext = initial_tau_measured - initial_gravity;
+  if(impulse_trajectory_generator == nullptr) {
+    throw std::bad_cast();
+  } 
 
-    auto force_control_callback = [&](const franka::RobotState& robot_state,
-                                      franka::Duration period) -> franka::Torques {
-      if (time == 0.0) {
-        traj_generator_->initialize_trajectory(robot_state);
+  auto force_control_callback = [&](const franka::RobotState& robot_state, 
+                    franka::Duration period) -> franka::Torques {
+    
+    current_period_ = period.toSec();
+    time += current_period_;
+
+    if (time == 0.0) {
+      impulse_trajectory_generator->initialize_trajectory(robot_state, SkillType::ForceTorqueSkill);
+      try {
+        if (lock.try_lock()) {
+          run_loop_info->set_time_skill_started_in_robot_time(robot_state.time.toSec());
+          lock.unlock();
+        } 
+      } catch (boost::interprocess::lock_exception) {
+        // Do nothing
       }
-      time += period.toSec();
-      traj_generator_->time_ = time;
-      traj_generator_->dt_ = period.toSec();
-      traj_generator_->get_next_step();
+    }
+    log_counter += 1;
+    if (log_counter % 1 == 0) {
+      pose_desired = robot_state.O_T_EE_d;
+      robot_state_data->log_robot_state(pose_desired, robot_state, robot->getModel(), time);
+    }
 
-      bool done = termination_handler_->should_terminate(traj_generator_);
-      double* force_torque_desired_ptr = &(traj_generator_->force_torque_desired_[0]);
-      Eigen::Map<Eigen::VectorXd> desired_force_torque(force_torque_desired_ptr, 6);
-
-      log_counter += 1;
-      if (log_counter % 1 == 0) {
-        robot_state_data->log_pose_desired(traj_generator_->pose_desired_);
-        robot_state_data->log_robot_state(robot_state, time);
+    bool done = termination_handler_->should_terminate_on_franka(robot_state, model_,
+                                                                 traj_generator_);
+    if (done && time > 0.0) {
+      try {
+        if (lock.try_lock()) {
+          run_loop_info->set_time_skill_finished_in_robot_time(robot_state.time.toSec());
+          lock.unlock();
+        } 
+      } catch (boost::interprocess::lock_exception) {
+        // Do nothing
       }
 
-      // get jacobian
-      std::array<double, 42> jacobian_array =
-          model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
-      Eigen::Map<const Eigen::Matrix<double, 6, 7> > jacobian(jacobian_array.data());
-
-      // compute control torques
-      Eigen::VectorXd tau_d(7);
-      tau_d << jacobian.transpose() * desired_force_torque;
-
+      // return 0 torques to finish
       std::array<double, 7> tau_d_array{};
-      Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
+      franka::Torques torques(tau_d_array);
+      return franka::MotionFinished(torques);
+    }
+    
+    impulse_trajectory_generator->check_displacement_cap(robot_state);
+    traj_generator_->time_ = time;
+    traj_generator_->dt_ = current_period_;
+    if(time > 0.0) {
+      traj_generator_->get_next_step();
+    }
 
-      if (done) {
-        franka::Torques torques(tau_d_array);
-        return franka::MotionFinished(torques);
-      }
+    feedback_controller_->get_next_step(robot_state, traj_generator_);
 
-      return tau_d_array;
-    };
+    return feedback_controller_->tau_d_array_;
+  };
 
-    robot->robot_.control(force_control_callback);
-
-  } catch (const franka::Exception& ex) {
-    run_loop::running_skills_ = false;
-    std::cerr << ex.what() << std::endl;
-    // Make sure we don't lose data.
-    robot_state_data->writeCurrentBufferData();
-
-    // print last 50 values
-    robot_state_data->printGlobalData(50);
-    robot_state_data->file_logger_thread_.join();
-  }
+  robot->robot_.control(force_control_callback);
 }
 
