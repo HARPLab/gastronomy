@@ -1,10 +1,14 @@
 # gastronomy/manipulation
 
-The manipulation repository consists of 2 packages.
+The manipulation repository consists of 3 packages.
 
 ## Robot-Interface
 
-The Robot-Interface package in the robot-interface folder was created by Mohit Sharma and Kevin Zhang to control the Franka Panda Research Robot and the UR5e and was used for the Dynamic Motion Primitives (DMP) cutting demo. In addition, CAD models that were 3D printed to hold the knife and mount cameras to the robot are included in the robot-interface/CAD Models folder.
+The Robot-Interface package in the robot-interface folder was created by the Intelligent Manipulation Lab to control the Franka Panda Research Robot at 1kHz. 
+
+## DMP
+
+The DMP package in the dmp folder was created by the Intelligent Manipulation Lab to train new dmp skills using trajectories recorded by the robot-interface package above.
 
 ## Plating
 
