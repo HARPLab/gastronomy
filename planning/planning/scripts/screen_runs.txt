@@ -1,0 +1,26 @@
+screen -S simple_hpomdp -c ~/Research/sony_project/simple_H_POMDP.screenrc
+
+screen -S simple_greedy_no_op_hybrid_shani -c ~/Research/sony_project/simple_greedy_noop_hybrid_shani.screenrc
+
+screen -S simple_greedy_noop_hybrid -c ~/Research/sony_project/simple_greedy_noop_hybrid.screenrc
+
+screen -S simple_greedy_noop -c ~/Research/sony_project/simple_greedy_noop.screenrc
+
+screen -S simple_greedy_noop_hybrid_3T_shani -c ~/Research/sony_project/simple_greedy_noop_hybrid_3T_shani.screenrc
+
+
+#########################################################################
+
+screen -S complex_h_pomdp -c ~/Research/sony_project/complex_H_POMDP.screenrc
+
+screen -S complex_greedy_noop -c ~/Research/sony_project/complex_greedy_noop.screenrc
+
+screen -S complex_greedy_noop_hybrid_shani -c ~/Research/sony_project/complex_greedy_noop_hybrid_shani.screenrc
+
+screen -S complex_greedy_noop_hybrid -c ~/Research/sony_project/complex_greedy_noop_hybrid.screenrc
+
+screen -S complex_optimal -c ~/Research/sony_project/complex_optimal.screenrc
+
+screen -S complex_greedy_hybrid_3T_shani -c ~/Research/sony_project/complex_greedy_noop_hybrid_3T_shani.screenrc
+
+screen -S complex_greedy_noop_hybrid_3T -c ~/Research/sony_project/complex_greedy_noop_hybrid_3T.screenrc

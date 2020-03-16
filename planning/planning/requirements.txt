@@ -2,3 +2,7 @@ numpy
 gym
 matplotlib
 ipdb
+seaborn
+tabulate
+pyyaml
+pudb

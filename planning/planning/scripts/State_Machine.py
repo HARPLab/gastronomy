@@ -4,23 +4,42 @@ import time
 import copy
 import threading
 from pdb import set_trace
+import sys
 
 import gym
-from discrete_tasks_env import DiscreteTasks
+from pomdp_tasks_env import POMDPTasks
 from Qlearning import Q_learning
 import rl
 import pylab as plt
-
+import signal
 from draw_env import *
 
 robot = None
-np.random.seed(80)
+# random.seed(80) # was 80
+
+random = None
+reset_random = None
+
 state_num = 0
-MAX_TIME = 10
+MAX_TIME = None
+# MAX_TIME = 10
 global_time = 0
 render_trace = True
 VI = False
-print_status = False
+print_status = True
+vrep = False
+# goals = [[0,0],[2,2],[0,2]]
+# goals = [[5,5],[2,7],[7,8],[3,2],[8,4],[6,1],[4,9],[1,4]]
+goals = [[2,8],[8,5],[2,2],[5,5],[8,8],[5,2],[2,5],[5,8],[8,2],[10,10],[0,0],[0,10],[10,0]]
+ROS = False
+if vrep:
+    from vrep_render import Vrep_Restaurant
+if ROS:
+    import rospy
+
+def signal_handler(signal, frame):
+    print("\nprogram exiting gracefully")
+    sys.exit(0)
 
 def create_state_machines(time, table, robot):
     global state_num
@@ -91,63 +110,65 @@ def ordering_SM(time, table, robot):
     Sensing_Action(robot, "sense", done_ordering, waiting_for_food_sm, table, 0.5)  ## conditionals
 
     Execution_Action(robot, "exec", sm.root, robot_at_table, table, 1)
-    Execution_Action(robot, "exec", robot_at_table, asked, table, 1)
-    Execution_Action(robot, "exec", q_recommendation, r_recommendation, table, 1)
-    Execution_Action(robot, "exec", q_specials, r_recommendation, table, 1)
+    Sensing_Action(robot, "exec", robot_at_table, asked, table, 1)
+    Sensing_Action(robot, "exec", q_recommendation, r_recommendation, table, 1)
+    Sensing_Action(robot, "exec", q_specials, r_recommendation, table, 1)
 
     return sm
 
 
 def waiting_for_food_SM(time, table, robot):
     sm = State_Machine("waiting_for_food_SM", table, robot)
+    food_half_ready = State("food is half ready", time, table)
     food_ready = State("food is ready", time, table)
     brings_food = State("robot brings the food", time, table)
     eating_sm = State("eating SM", time, table)
     drinking_sm = State("drinking SM", time, table)
+    brings_water = State("robot brings water", time, table)
     done_eating = State("people are done eating", time, table)
     get_bill_sm = State("get_bill_SM", time, table)
 
     Human_Action("H", brings_food, eating_sm, table, 1)
-    Human_Action("H", eating_sm, eating_sm, table, 1/3)
-    Human_Action("H", eating_sm, drinking_sm, table, 1/3)
-    Human_Action("H", drinking_sm, eating_sm, table, 1/2)
-    Human_Action("H", drinking_sm, drinking_sm, table, 1/2)
+    Human_Action("H", eating_sm, eating_sm, table, 1/4)
+    Human_Action("H", eating_sm, drinking_sm, table, 1/2)
+    Human_Action("H", drinking_sm, eating_sm, table, 1/4)
+    Human_Action("H", drinking_sm, done_eating, table, 1/4)
+    Human_Action("H", brings_water, drinking_sm, table, 1)
     Human_Action("H", done_eating, get_bill_sm, table, 1)
+    Human_Action("H", eating_sm, done_eating, table, 1/4) ## conditionals
 
-    Sensing_Action(robot, "sense", sm.root, food_ready, table, 1)
-    Sensing_Action(robot, "sense",eating_sm, done_eating, table, 1/3) ## conditionals
+    Sensing_Action(robot, "sense", sm.root, food_half_ready, table, 1)
+    Sensing_Action(robot, "sense", food_half_ready, food_ready, table, 1)
+    
 
+    Execution_Action(robot, "exec", drinking_sm, brings_water, table, 1/4)
     Execution_Action(robot, "exec", food_ready, brings_food, table, 1)
+    Execution_Action(robot, "exec", drinking_sm, drinking_sm, table, 1/4)
 
     return sm
 
 def get_bill_SM(time, table, robot):
     sm = State_Machine("get_bill_SM", table, robot)
-    wants_bill = State("human called the robot for the bill", time, table)
     waiting_for_bill = State("human waiting for the bill", time, table)
     has_bill = State("human has the bill", time, table)
     place_cards = State("human places the credit card", time, table)
     get_cards = State("robot gets the cards", time, table)
-    took_cards = State("robot took the cards", time, table)
     bring_receipt = State("robot brings back the cards and the receipt", time, table)
     sign_receipt = State("people sign and take their cards", time, table)
     left = State("people leave", time, table)
     get_receipt = State("robot gets the receipts", time, table)
     done_sm = State("done_SM", time, table)
 
-    Human_Action("H", sm.root, wants_bill, table, 1/2)
     Human_Action("H", has_bill, place_cards, table, 1)
     Human_Action("H", bring_receipt, sign_receipt, table, 1)
 
     Sensing_Action(robot, "sense", sign_receipt, left, table, 1/2)
 
-    Sensing_Action(robot, "sense", wants_bill, waiting_for_bill, table, 1)
-    Sensing_Action(robot, "sense",sm.root, waiting_for_bill, table, 1/2)
-    Sensing_Action(robot, "sense", place_cards, get_cards, table, 1)
+    Sensing_Action(robot, "sense",sm.root, waiting_for_bill, table, 1)
+    Execution_Action(robot, "sense", place_cards, get_cards, table, 1)
 
     Execution_Action(robot, "exec", waiting_for_bill, has_bill, table, 1)
-    Execution_Action(robot, "exec", get_cards, took_cards, table, 1)
-    Execution_Action(robot, "exec", took_cards, bring_receipt, table, 1)
+    Execution_Action(robot, "exec", get_cards, bring_receipt, table, 1)
     Execution_Action(robot, "exec", sign_receipt, get_receipt, table, 1/2)
     Execution_Action(robot, "exec", left, get_receipt, table, 1)
     Execution_Action(robot, "exec", get_receipt, done_sm, table, 1)
@@ -197,74 +218,10 @@ class Robot:
             print ("robot start: ", int(self.get_feature("x").value),int(self.get_feature("y").value))
         global MAX_TIME, global_time, VI
         # env = gym.make('Discrete-Restaurant-v0')
+        envs = POMDPTasks(self.restaurant, tasks,self, MAX_TIME,VI)
 
-        if VI is not None and (len(tasks) > 1):
-            initial_features = copy.deepcopy(self.get_features())
-            env = DiscreteTasks(tasks,self, MAX_TIME, VI)
-
-            num_train_episodes = 20000
-            num_test_episodes = 10
-
-            if print_status:            
-                print ("env name: ",env.name)
-                print("# of actions: ",env.nA)
-                print("# of states: ", env.nS)
-
-            if not VI:
-                if print_status:
-                    print ("**************************************")
-                    print ("Q-learning started.")
-                agent = Q_learning(env, env.nA, env.nS, epsilon=0.1, gamma=0.95, alpha=0.05, exploration_policy="epsilon_greedy_w_decay")
-                agent.train(num_train_episodes,num_test_episodes)
-                val_func = agent.get_V()
-                policy = agent.get_policy()
-                Q = agent.get_Q()
-                if print_status:
-                    print ("Q-learning ended.")
-                    print ("**************************************")
-            else:
-                if print_status:
-                    print ("**************************************")
-                    print ("Value iteration started.")
-                val_func, iterations, policy, Q = rl.value_iteration(env, gamma=0.95)
-                if print_status:
-                    print ("num of iterations: "+str(iterations))
-                    print ("Value iteration ended.")
-                    print ("**************************************")
-            t0_x = tasks[0].get_feature("x").value
-            t0_y = tasks[0].get_feature("y").value
-            t1_x = tasks[1].get_feature("x").value
-            t1_y = tasks[1].get_feature("y").value
-            if print_status:
-                    print ("task0: ", tasks[0].table.id, " ",t0_x,t0_y,"task1: ", tasks[1].table.id, " ",t1_x,t1_y)
-            if len(tasks) ==3:
-                t2_x = tasks[2].get_feature("x").value
-                t2_y = tasks[2].get_feature("y").value
-                if print_status:
-                    print ("task0: ", tasks[0].table.id, " ",t0_x,t0_y,"task1: ", tasks[1].table.id, " ",t1_x,t1_y,"task2: ", tasks[2].table.id, " ",t2_x,t2_y)
-
-            self.set(initial_features)
-            policy_reshaped =  policy.reshape(env.state_space_dim)
-            if len(tasks) == 2:
-                selected_task = policy_reshaped[0,0,t0_x,t0_y,t1_x,t1_y,int(self.get_feature("x").value),int(self.get_feature("y").value)]
-            if len(tasks) == 3:
-                selected_task = policy_reshaped[0,0,0,t0_x,t0_y,t1_x,t1_y,t2_x,t2_y,int(self.get_feature("x").value),int(self.get_feature("y").value)]
-
-            # if len(tasks) ==2:
-            #     new_val_func = val_func.reshape(env.state_space_dim)
-            #     print ("(0,0)", policy.reshape(env.state_space_dim)[0,0,t0_x,t0_y,t1_x,t1_y,int(self.get_feature("x").value),int(self.get_feature("y").value)])
-            #     print ("Q(0,0),0", Q.reshape(env.state_space_dim+(2,))[0,0,t0_x,t0_y,t1_x,t1_y,int(self.get_feature("x").value),int(self.get_feature("y").value),0])
-            #     print ("Q(0,0),1", Q.reshape(env.state_space_dim+(2,))[0,0,t0_x,t0_y,t1_x,t1_y,int(self.get_feature("x").value),int(self.get_feature("y").value),1])
-            #     rl.show_value_function(env,new_val_func[0,0,t0_x,t0_y,t1_x,t1_y,:,:])
-
-            # if len(tasks) ==3:
-            #     new_val_func = val_func.reshape(env.state_space_dim)
-            #     print ("(0,0)", policy.reshape(env.state_space_dim)[0,0,0,t0_x,t0_y,t1_x,t1_y,t2_x,t2_y,int(self.get_feature("x").value),int(self.get_feature("y").value)])
-            #     print ("Q(0,0),0", Q.reshape(env.state_space_dim+(3,))[0,0,0,t0_x,t0_y,t1_x,t1_y,t2_x,t2_y,int(self.get_feature("x").value),int(self.get_feature("y").value),0])
-            #     print ("Q(0,0),1", Q.reshape(env.state_space_dim+(3,))[0,0,0,t0_x,t0_y,t1_x,t1_y,t2_x,t2_y,int(self.get_feature("x").value),int(self.get_feature("y").value),1])
-            #     print ("Q(0,0),2", Q.reshape(env.state_space_dim+(3,))[0,0,0,t0_x,t0_y,t1_x,t1_y,t2_x,t2_y,int(self.get_feature("x").value),int(self.get_feature("y").value),2])
-            #     rl.show_value_function(env,new_val_func[0,0,0,t0_x,t0_y,t1_x,t1_y,t2_x,t2_y,:,:])
-
+        if VI:
+            pass
         else:
             selected_task = 0
         
@@ -289,10 +246,10 @@ class Robot:
                 self.restaurant.render()
                 task = self.select_task(self.planned_tasks)
                 self.curr_task = task
-                _,_,num_steps = task.execute(render=True)
+                # _,_,num_steps = task.execute(render=True)
                 task.done = True
                 self.curr_task = None
-                global_time += num_steps
+                # global_time += num_steps
                 self.restaurant.render()
             
             self.mutex.release()
@@ -306,16 +263,24 @@ class Robot:
                 self.restaurant.render()
 
             
-
-
-    def reset(self):
+    def reset(self, pos=None):
+        global reset_random
         # if self.features == None:
         self.features = []
-        # self.features.append(Feature("x", "discrete", False, 0, 10, 1, np.random.randint(0,11))) ## 10 by 10 grid
-        # self.features.append(Feature("y", "discrete", False, 0, 10, 1, np.random.randint(0,11)))
-        self.features.append(Feature("x", "discrete", False, 0, 6, 1, np.random.randint(0,7))) ## 10 by 10 grid
-        self.features.append(Feature("y", "discrete", False, 0, 6, 1, np.random.randint(0,7)))
-        # self.features.append(Feature("theta", "discrete", False, 0, 11, 1, np.random.randint(0,12))) # theta # * 30 degree
+        if pos is None:
+            # reset_random.randint(0,11)
+            # reset_random.randint(0,11)
+            
+            self.features.append(Feature("x", "discrete", False, 0, 10, 1, reset_random.randint(0,11))) ## 10 by 10 grid
+            self.features.append(Feature("y", "discrete", False, 0, 10, 1, reset_random.randint(0,11)))
+            # self.features.append(Feature("x", "discrete", False, 0, 10, 1, 3)) ## 10 by 10 grid
+            # self.features.append(Feature("y", "discrete", False, 0, 10, 1, 4))
+        else:
+            reset_random.randint(0,11)
+            reset_random.randint(0,11)
+
+            self.features.append(Feature("x", "discrete", False, 0, 10, 1, pos[0])) ## 10 by 10 grid
+            self.features.append(Feature("y", "discrete", False, 0, 10, 1, pos[1]))
 
     def set(self, features):
         self.features = []
@@ -365,7 +330,7 @@ class Action:
 
 
 class Feature:
-    def __init__(self, name, typee, time_based, low, high, discretization, value = 1):
+    def __init__(self, name, typee, time_based, low, high, discretization, value, observable=True):
         self.name = name
         self.type = typee
         self.time_based = time_based
@@ -373,12 +338,13 @@ class Feature:
         self.high = high
         self.discretization = discretization
         self.value = value
+        self.observable = observable
 
     def feature_value(self, time, table):
-        global MAX_TIME
+        global MAX_TIME, random
         if self.time_based:
             if table.patience is None:
-                table.patience = np.random.randint(low = MAX_TIME, high = MAX_TIME, size = 1)
+                table.patience = random.randint(low = MAX_TIME, high = MAX_TIME, size = 1)
 
             new_value = int(np.power(time*(1.0/table.patience)-self.value,2))
             if new_value < self.low:
@@ -477,16 +443,21 @@ class Robot_Action (Action):
             prev_y = position_features[1][1]
             y = position_features[1][2]
             self.table.render()
-            while (prev_x != x and not (self.table == self.table.restaurant.dummy_table and self.robot.tasks.__len__() != 0)):
-                dir_x = np.sign(x-prev_x)
-                prev_x = prev_x + dir_x
-                self.robot.set_feature("x", prev_x)
-                self.table.render()
-            while (prev_y != y and not (self.table == self.table.restaurant.dummy_table and self.robot.tasks.__len__() != 0)):
-                dir_y = np.sign(y-prev_y)
-                prev_y = prev_y + dir_y
-                self.robot.set_feature("y", prev_y)
-                self.table.render()
+            if not vrep:
+                while (prev_x != x and not (self.table == self.table.restaurant.dummy_table and self.robot.tasks.__len__() != 0)):
+                    dir_x = np.sign(x-prev_x)
+                    prev_x = prev_x + dir_x
+                    self.robot.set_feature("x", prev_x)
+                    self.table.render()
+                while (prev_y != y and not (self.table == self.table.restaurant.dummy_table and self.robot.tasks.__len__() != 0)):
+                    dir_y = np.sign(y-prev_y)
+                    prev_y = prev_y + dir_y
+                    self.robot.set_feature("y", prev_y)
+                    self.table.render()
+            else:
+                ##self.table.restaurant.vrep_sim.go_to ((prev_x,prev_y),(x,y),self.table.id)
+                pass
+            
 
         num_steps = self.get_num_steps(position_features)
         return new_state, new_state_robot, num_steps
@@ -546,6 +517,162 @@ class State:
 
     def print(self):
         print (self.table.get_prefix() + " state: ",self.name, " #", self.number)
+        
+
+
+    def execute_on_robot (self, table, edge):        
+        if isinstance(edge, Execution_Action):
+            edge.done = False
+            self.table.robot.add_task(edge)
+            while (not edge.done):
+                sleep(0.1)
+
+            num_reqs = table.get_feature ("num_past_requests")
+            num_reqs.set_value(num_reqs.value+1)
+            print(edge.table.get_prefix() + " executed ", edge.begin.name, ",", edge.end.name)
+
+            req = table.get_feature ("current_request")
+            t_req = table.get_feature ("time_since_hand_raise")
+            hand_raise = table.get_feature ("hand_raise")
+            satisfaction = table.get_feature ("customer_satisfaction")
+
+            req.set_value(0)
+            t_req.set_value(0)
+            hand_raise.set_value(0)
+            satisfaction.set_value(0)
+            table.time_hand_raise = None
+
+        return edge.end
+
+    def execute (self, table):
+        global global_time, random
+        
+        edge = None
+        req = table.get_feature ("current_request")
+        t_req = table.get_feature ("time_since_hand_raise")
+        hand_raise = table.get_feature ("hand_raise")
+        if "drinking SM" in self.name:
+            water = table.get_feature ("water")
+            if water.value == 0:
+                req.set_value(4)
+                t_req.set_value(0)
+                hand_raise.set_value(1)
+                table.time_hand_raise = global_time
+                for e in self.children:
+                    if isinstance(e, Execution_Action):
+                        edge = e
+                        next_state = edge.end
+                        break
+            else:
+                water.set_value(water.value-1)
+                food = table.get_feature ("food")
+                if food.value == food.high:
+                    for e in self.children:
+                        if "people are done eating" in e.end.name:
+                            edge = e
+                            next_state = edge.end
+                            break
+                else:  
+                    for e in self.children:
+                        if "eating SM" in e.end.name:
+                            edge = e
+                            next_state = edge.end
+                            break
+        elif "robot brings water" in self.name:
+            water = table.get_feature ("water")
+            water.set_value(water.high)
+            req.set_value(0)
+            t_req.set_value(0)
+            hand_raise.set_value(0)
+            table.time_hand_raise = None          
+            
+            edge = random.choice(self.children, p=self.transition_probs) 
+            next_state = edge.end     
+                        
+        elif "eating SM" in self.name:
+                food = table.get_feature ("food")
+                if food.value == food.high:
+                    for e in self.children:
+                        if "people are done eating" in e.end.name:
+                            edge = e
+                            next_state = edge.end
+                            break
+                else:
+                    food.set_value(food.value+1)
+                    edge = random.choice(self.children, p=self.transition_probs) 
+                    next_state = edge.end     
+        else:     
+            edge = random.choice(self.children, p=self.transition_probs) 
+            next_state = edge.end     
+
+            food = table.get_feature("food")
+
+            if "have the menu" in next_state.name:                
+                req.set_value(1)
+                t_req.set_value(0)
+                hand_raise.set_value(1)
+                table.time_hand_raise = global_time
+            elif "ordering_SM" in self.name:
+                req.set_value(2)
+                t_req.set_value(0)
+                hand_raise.set_value(1)
+                table.time_hand_raise = global_time
+
+            elif "waiting_for_food_SM" in self.name:
+                req.set_value(3)
+                t_req.set_value(0)
+                hand_raise.set_value(1)
+                table.time_hand_raise = global_time
+                food.set_value(0)
+            elif "food is half ready" in self.name:
+                food.set_value(food.value+1)
+                req.set_value(3)
+                hand_raise.set_value(1)
+            elif "food is ready" in self.name:
+                food.set_value(food.value+1)  
+                table.time_food_ready = global_time  
+                req.set_value(3)
+                hand_raise.set_value(1)
+            elif "robot brings the food" in self.name:
+                food.set_value(food.value+1)  
+                table.time_food_ready=None  
+                req.set_value(0)
+                hand_raise.set_value(0)
+
+                
+            elif "human waiting for the bill" in self.name:
+                req.set_value(5)
+                t_req.set_value(0)
+                hand_raise.set_value(1)
+                table.time_hand_raise = global_time
+            elif "human places the credit card" in self.name:
+                req.set_value(6)
+                t_req.set_value(0)
+                hand_raise.set_value(1)
+                table.time_hand_raise = global_time
+            elif "robot brings back the cards and the receipt" in next_state.name:
+                req.set_value(7)
+                t_req.set_value(0)
+                hand_raise.set_value(1)
+                table.time_hand_raise = global_time
+            elif "robot gets the receipts" in next_state.name:
+                req.set_value(8)
+                t_req.set_value(0)
+                hand_raise.set_value(1)
+                table.time_hand_raise = global_time
+            else:
+                req.set_value(0)
+                hand_raise.set_value(0)
+                table.time_hand_raise = None
+
+
+
+        table.print_features()
+        sleep(self.time)
+        next_state = self.execute_on_robot(table, edge)
+        
+    
+        return next_state, edge 
 
 class State_Machine:
     def __init__(self, name, table, robot):
@@ -555,24 +682,38 @@ class State_Machine:
         self.robot = robot
 
     def run(self, table):
+        global global_time
         done = False
         self.current_state = self.root
         hist_num = 0
         self.print()
         while not self.table.restaurant.done:
             self.current_state.print()
+            if table.get_feature("hand_raise").value == 1:
+                t_req = table.get_feature ("time_since_hand_raise")
+                t_req.set_value(global_time-table.time_hand_raise)
+            else:
+                t_req = table.get_feature ("time_since_hand_raise")
+                t_req.set_value(0)
+                table.time_hand_raise=None 
+
+            if table.get_feature("food").value == 2:
+                t_req = table.get_feature ("time_since_food_ready")
+                t_req.set_value(global_time-table.time_food_ready)
+            else:
+                t_req = table.get_feature ("time_since_food_ready")
+                t_req.set_value(0)
+                table.time_food_ready=None 
+
+            table.update_satisfaction()
+
+
             if self.current_state is None or self.current_state.children.__len__() == 0:
                 sleep(self.current_state.time)
                 break
-            sleep(self.current_state.time)
-            edge = np.random.choice(self.current_state.children, p=self.current_state.transition_probs)
-            if isinstance(edge, Robot_Action):
-                edge.done = False
-                self.robot.add_task(edge)
-                while (not edge.done):
-                    sleep(0.1)
-                print(edge.table.get_prefix() + " executed ", edge.begin.name, ",", edge.end.name)
-            self.current_state = edge.end
+
+            next_state, edge = self.current_state.execute(table)
+            self.current_state = next_state
             table.histories.append(History(hist_num,table.start_time,edge.end))
             hist_num += 1
 
@@ -595,17 +736,21 @@ class History:
 
 class Table:
     def __init__(self, restaurant, id, robot, fake=False):
+        global random
         self.num_humans = 0
         self.time = 0
         self.fake = fake
         self.restaurant = restaurant
         self.id = id
         self.start_time = time.time()
+        self.time_hand_raise = None
+        self.time_food_ready = None
         self.humans = set()
         self.histories = list()
+        self.robot = robot
         if not self.fake:
-            self.num_humans = np.random.randint(5)
-            self.time = np.random.randint(5)/5.0
+            self.num_humans = random.randint(5)
+            self.time = random.randint(5)/5.0
             self.state_machines = create_state_machines(self.time, self, robot)
         self.patience = None
         for h in range(self.num_humans):
@@ -648,71 +793,175 @@ class Table:
     def get_features (self):
         return self.features
 
+    def print_features(self):
+        features_value = []
+        for feature in self.features:
+            features_value.append (feature.value)
+
+        print (features_value)
+
     def reset_all (self):
+        global random
         self.features = []
         if not self.fake:
+            global goals
             # self.initialization_feature_range = (6, 9)
             # self.features.append(Feature("attention", "discrete", True, 0, MAX_TIME, 1, \
-            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
+            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * random.random_sample() + self.initialization_feature_range[0])))
             # self.features.append(Feature("urgency", "discrete", True, 0, MAX_TIME, 1, \
-            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
-            # self.features.append(Feature("completion", "discrete", True, 0, MAX_TIME, 1, \
-            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0])))
 
-            # self.features.append(Feature("x", "discrete", False, 0, 10, 1, np.random.randint(0,11))) ## 10 by 10 grid
-            # self.features.append(Feature("y", "discrete", False, 0, 10, 1, np.random.randint(0,11)))
-            self.features.append(Feature("x", "discrete", False, 0, 6, 1, np.random.randint(0,7))) ## 10 by 10 grid
-            self.features.append(Feature("y", "discrete", False, 0, 6, 1, np.random.randint(0,7)))
-            # self.features.append(Feature("theta", "discrete", False, 0, 11, 1, np.random.randint(0,12))) # theta # * 30 degree
+            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * random.random_sample() + self.initialization_feature_range[0])))
+            # self.features.append(Feature("completion", "discrete", True, 0, MAX_TIME, 1, \
+            #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * random.random_sample() + self.initialization_feature_range[0])))
+            
+            # self.features.append(Feature("theta", "discrete", False, 0, 11, 1, random.randint(0,12))) # theta # * 30 degree
+
+            
+            # self.features.append(Feature("urgency", "discrete", True, 0, MAX_TIME, 1, 0)) # increases based on time from request
+
+            # self.features.append(Feature("x", "discrete", False, 0, 10, 1, goals[self.id][0])) 
+            # self.features.append(Feature("y", "discrete", False, 0, 10, 1, goals[self.id][1]))
+
+            self.goal_x = goals[self.id][0]
+            self.goal_y = goals[self.id][1]
+
+            ## just started, half-ready, ready
+            self.features.append(Feature("cooking_status", "discrete", False, 0, 2, 1, 0))
+            ## ready-hot, ready-almost-hot, ready-cold
+            self.features.append(Feature("time_since_food_ready", "discrete", False, 0, MAX_TIME-1, 1, 0))
+            ## not-served, served-full, served-half, served-empty
+            self.features.append(Feature("water", "discrete", False, 0, 3, 1, 0)) ## full, empty, half
+            ## not-served, served-full, served-half, served-empty
+            self.features.append(Feature("food", "discrete", False, 0, 3, 1, 0))
+
+            self.features.append(Feature("time_since_served", "discrete", False, 0, MAX_TIME-1, 1, 0))
+
+            self.features.append(Feature("hand_raise", "discrete", False, 0, 1, 1, 0)) 
+            ## just raised, half, late
+            self.features.append(Feature("time_since_hand_raise", "discrete", False, 0, MAX_TIME-1, 1, 0))
+            self.features.append(Feature("food_picked_up", "discrete", False, 0, 1, 1, 0))
+            # self.features.append(Feature("num_past_requests", "discrete", False, 0, 9, 1, 0))
+
+            # no_req, want_menu, ready_to_order, want_food, want_water, want_bill, get_cards, want_cards_back, done_table
+            self.features.append(Feature("current_request", "discrete", False, 0, 8, 1, 0))
+            self.features.append(Feature("customer_satisfaction", "discrete", False, 0, 5, 1, 0, False))
+            
         else:
-            self.features.append(Feature("x", "discrete", False, 0, 6, 1, 0)) ## 10 by 10 grid
-            self.features.append(Feature("y", "discrete", False, 0, 6, 1, 0))
+            ## just started, half-ready, ready
+            self.features.append(Feature("cooking_status", "discrete", False, 0, 2, 1, 0))
+            ## ready-hot, ready-almost-hot, ready-cold
+            self.features.append(Feature("time_since_food_ready", "discrete", False, 0, MAX_TIME-1, 1, 0))
+            self.features.append(Feature("water", "discrete", False, 0, 2, 1, 0)) ## full, empty, half
+            ## served-full, served-half, served-empty
+            self.features.append(Feature("food", "discrete", False, 0, 2, 1, 0))
+
+            self.features.append(Feature("time_since_served", "discrete", False, 0, MAX_TIME-1, 1, 0))
+
+            self.features.append(Feature("hand_raise", "discrete", False, 0, 1, 1, 0)) 
+            ## just raised, half, late
+            self.features.append(Feature("time_since_hand_raise", "discrete", False, 0, MAX_TIME-1, 1, 0))
+            self.features.append(Feature("food_picked_up", "discrete", False, 0, 1, 1, 0))
+            # self.features.append(Feature("num_past_requests", "discrete", False, 0, 9, 1, 0))
+
+            # no_req, want_menu, ready_to_order, want_food, want_water, want_bill, get_cards, want_cards_back, done_table
+            self.features.append(Feature("current_request", "discrete", False, 0, 8, 1, 0))
+            self.features.append(Feature("customer_satisfaction", "discrete", False, 0, 5, 1, 0, False))
 
     def reset (self):
         # self.get_feature("attention").set_value ( \
-        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0]))
+        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * random.random_sample() + self.initialization_feature_range[0]))
         # self.get_feature("urgency").set_value ( \
-        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0]))
+        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * random.random_sample() + self.initialization_feature_range[0]))
         # self.get_feature("completion").set_value ( \
-        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * np.random.random_sample() + self.initialization_feature_range[0]))
+        #     int((self.initialization_feature_range[1] - self.initialization_feature_range[0]) * random.random_sample() + self.initialization_feature_range[0]))
         pass
     def render(self):
         self.restaurant.render()
 
+    def update_satisfaction(self):
+        pass
+
 class Restaurant:
-    def __init__(self):
+    def __init__(self,seed,num_tables,horizon,greedy,simple,model,no_op,run_on_cobot,hybrid,deterministic,hybrid_3T,shani_baseline,hierarchical_baseline):
+        global random, MAX_TIME, global_time, vrep, VI, reset_random, goals
+        if seed is not None and seed != -1:
+            random = np.random.RandomState(seed)
+            reset_random = np.random.RandomState(seed+10)
+        else:
+            random = np.random.RandomState()
+            reset_random = np.random.RandomState()
+            seed = None
+
+
+        if run_on_cobot:
+            goals = [[6,2],[6,6],[3,7]]
+
+        if vrep:
+            self.vrep_sim = Vrep_Restaurant()
         self.done = False
         self.tables = list()
         self.threads = list()
-        self.num_tables = 3
+        self.num_tables = num_tables
+
+        MAX_TIME = self.num_tables * 6
+
         self.robot = Robot(self)
         self.robot_thread = threading.Thread(target=self.robot.run, daemon=True, args=())
-        self.dummy_table = Table(self, 10000, self.robot, fake=True)
+        # self.dummy_table = Table(self, 10000, self.robot, fake=True)
         for t in range(self.num_tables):
             table = Table(self, t, self.robot)
             self.tables.append(table)
             self.threads.append(threading.Thread(target=table.run, daemon=True, args=()))
 
-        rng = list(range(self.num_tables))
-        np.random.shuffle(rng)
+        for table in self.tables:
+            talking1 = State("talking1", table.time, table)
+            have_menu = State("have the menu", table.time, table)
+            robot_task = Execution_Action(self.robot, "exec", talking1, have_menu, table, 1.0)
 
-        self.robot_thread.start()
-        for t in rng:
-            self.threads[t].start()
+            self.robot.add_task(robot_task)
 
-        while(not self.done):
-            self.done = True
-            for t in rng:
-                if self.threads[t].isAlive():
-                    self.done = False
-                    break
-            sleep(1)
+        print ("seed: ", seed, "#tables", self.num_tables, "horizon: ", horizon, "greedy: ", greedy, "simple: ", simple, \
+            "model: ", model, "no_op: ", no_op, "hybrid: ", hybrid, "deterministic: ",deterministic, "hybrid_3T: ", hybrid_3T, \
+            "shani_baseline: ", shani_baseline, "hierarchical_baseline: ", hierarchical_baseline)
+        envs = POMDPTasks(self, list(self.robot.tasks),self.robot, seed, random, reset_random, horizon, greedy, simple, model, \
+            no_op, run_on_cobot, hybrid, deterministic, hybrid_3T, shani_baseline, hierarchical_baseline)
 
-        self.done = True
-        self.robot.done = True
+        # set_trace()
 
-        for t in self.threads:
-            t.join()
+
+        # rng = list(range(self.num_tables))
+        # random.shuffle(rng)
+
+        # self.robot_thread.start()
+        # for t in rng:
+        #     self.threads[t].start()
+
+        # try:
+        #     if ROS:
+        #         rospy.init_node('sony', anonymous=True)
+        #         rate = rospy.Rate(10) # 10hz
+        #     while(not self.done): ## and not rospy.is_shutdown()):
+        #         self.done = True
+        #         for t in rng:
+        #             if self.threads[t].isAlive():
+        #                 self.done = False
+        #                 break
+        #         if ROS:
+        #             rate.sleep()
+        #         else:
+        #             time.sleep(0.1)
+        #         global_time += 1
+        #         # print ("global_time: ", global_time)
+
+
+        # finally:
+        #     self.done = True
+        #     self.robot.done = True
+        #     if vrep:
+        #         self.vrep_sim.done()
+
+        # for t in self.threads:
+        #     t.join()
 
 
     def print(self):
@@ -720,40 +969,78 @@ class Restaurant:
             print(t)
 
     def render(self, mode='human', close=False):
-        """ Viewer only supports human mode currently. """
-        global render_trace
-        plt.clf()
-        margin = 0.5
-        x_low = self.robot.get_feature("x").low - margin
-        x_high = self.robot.get_feature("x").high + margin
-        y_low = self.robot.get_feature("y").low - margin
-        y_high = self.robot.get_feature("y").high + margin
-        coords = [x_low,x_high,y_low,y_high]
-        drawTables(coords, self.tables)
-        drawRobot(self.robot, 0.5)
-        if self.robot.curr_task is not None:
-            drawTasks(self.robot.tasks + [self.robot.curr_task])
+        global vrep
+        if not vrep:
+            """ Viewer only supports human mode currently. """
+            global render_trace
+            plt.clf()
+            margin = 0.2
+            x_low = self.robot.get_feature("x").low - margin
+            x_high = self.robot.get_feature("x").high + margin
+            y_low = self.robot.get_feature("y").low - margin
+            y_high = self.robot.get_feature("y").high + margin
+            coords = [x_low,x_high,y_low,y_high]
+            drawTables(coords, self.tables)
+            drawRobot(self.robot, 0.5)
+            if self.robot.curr_task is not None:
+                drawTasks(self.robot.tasks + [self.robot.curr_task])
+            else:
+                drawTasks(self.robot.tasks)
+            # plt.plot(self.points[:,0],self.points[:,1],'.')
+
+            plt.axis('equal')
+            plt.axis(coords)
+
+            # drawPath(self.poses, self.counter)
+            plt.show(block=False)
+            plt.pause(0.5)
+
+            if render_trace:
+                set_trace() 
+                render_trace = False
+            ## plt.close()
+
+            # if self.finish_render:
+            #     plt.show(block=False)
+            #     plt.pause(0.0000000001)
+
+            # if close:
+            #     plt.close()
         else:
-            drawTasks(self.robot.tasks)
-        # plt.plot(self.points[:,0],self.points[:,1],'.')
+            self.vrep_render()
 
-        plt.axis('equal')
-        plt.axis(coords)
+    def vrep_render (self):
+        self.vrep_sim.render(self.robot, self.tables, self.done)
 
-        # drawPath(self.poses, self.counter)
-        plt.show(block=False)
-        plt.pause(0.5)
+def main():
+    # print command line arguments
+    # set_trace()
+    signal.signal(signal.SIGINT, signal_handler)
+    no_op = False
+    hybrid = False
+    deterministic = False
+    hybrid_3T = False
+    shani_baseline = False
+    hierarchical_baseline = False
+    run_on_cobot = False
+    if "no_op" in str(sys.argv[6]):
+        no_op = True
+    if "hybrid" in str(sys.argv[6]):
+        hybrid = True
+        if "hybrid_3T" in str(sys.argv[6]):
+            hybrid_3T = True
+    if "deterministic" in str(sys.argv[6]):
+        deterministic = True
+    if "shani" in str(sys.argv[6]):
+        shani_baseline = True
+    if "H_POMDP" in str(sys.argv[6]):
+        hierarchical_baseline = True
+    if len(sys.argv) > 7 and ("robot" in str(sys.argv[7])):
+        run_on_cobot = True
 
-        # if render_trace:
-        #     set_trace() 
-        #     render_trace = False
-        ## plt.close()
+    rst = Restaurant(seed=int(sys.argv[1]),num_tables=int(sys.argv[2]),horizon=int(sys.argv[3]),greedy=bool(sys.argv[4] == "True")\
+        ,simple=bool(sys.argv[5] == "True"), model=str(sys.argv[6]), no_op=no_op, run_on_cobot=run_on_cobot, hybrid=hybrid, deterministic=deterministic\
+        , hybrid_3T=hybrid_3T, shani_baseline=shani_baseline, hierarchical_baseline=hierarchical_baseline)
 
-        # if self.finish_render:
-        #     plt.show(block=False)
-        #     plt.pause(0.0000000001)
-
-        # if close:
-        #     plt.close()
-
-rst = Restaurant()
+if __name__ == "__main__":
+    main()
