@@ -1,0 +1,9 @@
+Header header
+float32 ref_x
+float32 ref_y
+float32 ref_z
+float32 ref_t
+float32 x
+float32 y
+float32 z
+float32 t
