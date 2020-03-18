@@ -393,7 +393,7 @@ def run_main():
 
     magnetic_calibration = MagneticCalibration()
 
-    filename = '../../scripts/2020-01-14 11-08 E1 2X Board Calibration.npz'
+    filename = '../calibration/2020-01-14 11-08 E1 2X Board Calibration.npz'
     magnetic_calibration.load_calibration_file(filename)
    
     # Close the gripper and save corresponding robot state, gripper state, and magnetic state data
