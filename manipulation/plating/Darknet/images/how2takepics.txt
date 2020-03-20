@@ -1,0 +1,9 @@
+For taking pictures with the Azure Kinect manually:
+1) run:
+    roslaunch azure_kinect_ros_driver driver.launch
+   - need to download this from the azure kinect ros git
+2) In another terminal run:
+    rosrun rqt_image_view rqt_image_view
+3) From the drop down menu, select camera type and begin saving the
+images. Before you run this command go to the directory where you want
+to save the images. It saves a lot of time when saving.

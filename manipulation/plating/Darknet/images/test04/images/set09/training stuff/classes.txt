@@ -1,0 +1,14 @@
+robot
+knife
+tongs
+cutting_board
+cucumber
+cucumber_slice
+tomato
+tomato_slice
+celery
+celery_slice
+cheese
+cheese_slice
+carrot
+carrot_slice

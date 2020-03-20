@@ -1,0 +1,91 @@
+"""
+Author: Steven Lee
+Date created: 10/28/19
+
+This repository was taken from https://github.com/ayooshkathuria/pytorch-yolo-v3
+"""
+Most recent commands I've been using:
+(11/4/19)
+python detect.py --cfg /home/stevenl3/darknet/YOLO_test04/test04_yolov3.cfg --weights /home/stevenl3/darknet/YOLO_test04/weights/test04_yolov3_final.weights --det /home/stevenl3/darknet/YOLO_test04/images/set01 --images /home/stevenl3/darknet/YOLO_test04/images/set01 --bs 11
+#####################################################################################
+Commands for running detect.py:
+
+Detecting a single image:
+python detect.py --det /home/stevenl3/darknet/pytorch-yolo-v3 --cfg /home/stevenl3/darknet/YOLO_v3_tutorial_from_scratch/cfg/test2_yolov3.cfg --weights /home/stevenl3/darknet/YOLO_v3_tutorial_from_scratch/test2_yolov3_final.weights --images /home/stevenl3/darknet/YOLO-Object-Detection/for_testing/set02/20191017_123822.jpg
+Notes:
+	- use python detect.py -h to list all of the arguments
+	- To give outputs for all of the images in a directory change the --image argument to a directory
+	- make sure to add the --bs argument if you are doing multiple images. --bs is batch size
+	- also need to change the --det argument to change where to save the results
+#####################################################################################
+Steps for gathering data for distributions:
+
+- gather images of data you would like object detector to be trained on
+- annotate images and create .txt in yolo format
+    * used labelImg repository, some of their hotkeys:
+        - w: make new bounding box
+        - a: go to previous image
+        - d: go to next image
+- train a new object detection system and obtain the weights
+- use system to do object detection on images. Use the detect.py script to run YOLO on the images.
+- save the resulting images wherever (this is specified by the --det argument). 
+  I just put them in the same folder as the original images and moved them to
+  a "predictions" folder later on. 
+- the script should also save a predictions.npy file in the same location.
+- use the collect_data.py script I made to collect data on the images. 
+
+Some Notes:
+- detect.py only takes png and jpg right now, you can change it in the code though
+- make sure that only the original images are in the directory when you are using detect.py
+	- as long as the files aren't .jpg or .png files, you can leave them in the directory
+- Same for when you run collect_data.py
+- collect_data.py erases the previous predictions.npy file in the directory you use. may want to change this
+- also might be easier to write a script or launch file to get all the predictions
+#####################################################################################
+The list of all the classes for food.names:
+robot
+knife
+tongs
+cutting_board
+cucumber
+cucumber_slice
+tomato
+tomato_slice
+celery
+celery_slice
+cheese
+cheese_slice
+carrot
+carrot_slice
+#####################################################################################
+Changes I have made to the pytorch-yolo-v3 repo (not all changes may be documented):
+- I moved all of the stuff i am not using to the misc_not_using folder
+	- because of this change i had to remove the test functions in detect.py
+- in detect.py around line 240, there is a function called write in the main loop. I adjusted the values of the rectangles and text to make it easier to read.
+	- there is also another write function in util, but i didn't change it
+- I added the following snippet to detect.py in the main loop where it loops through the images in the batch.
+	predict = prediction.cpu().detach().numpy()
+        box_info.append(predict)
+  The above snippet was added around line 175 after the line: prediction = write_results(prediction, confidence, num_classes, nms = True, nms_conf = nms_thesh). I also instantiated the box_info list before the main loop started.
+  This adds the output values of write_results to a list. converting it to a numpy array that uses the CPU, using GPU caused error
+- I also added the below snippet around line 193, replacing the else condition for if not write with:
+        elif output.size()[1] == prediction.size()[1]:
+            output = torch.cat((output,prediction))
+  I don't know if this is actually necessary becasue i think the first snippet fixed the bug that this snippet was trying to solve
+- After the above for loop ends and write after the try and except statements that check if no detections were made: 
+    box_info = np.vstack(box_info)
+    box_info = np.array(box_info)
+    np.save('{}/predictions.npy'.format(args.det), box_info) 
+  This reshapes the list of bounding box descriptors and saves it
+
+I adjusted the detect.py script to save a numpy array that describes the objects detected in the image, it is saved to the directory specified in --det.
+It should output a N x 8 array, where N is the number of final detections made in all of the images in the batch. The indexes represent:
+	- [0] the index of the image in the batch where the bounding box is located
+	- [1],[2] the topleft corner x and y coordinates (x is horizontal or image width)
+	- [3],[4] the bottom right corner x and y coordinates
+	- [5] the objectness score
+	- [6] the score of the class with maximum confidence
+	- [7] the index of the class from [6]
+
+- I ajusted the detect.py file to go through the directory and make predictions on the images in sequential order. It was doing it an arbitrary order ealier (since the computer doesn't actually put them in sequential order). ~ lines 100 to 120
+####################################################################################

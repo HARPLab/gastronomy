@@ -1,0 +1,15 @@
+/home/stevenl3/darknet/YOLO_test04/labels/train/image104.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image160.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image108.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image187.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image178.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image38.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image43.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image26.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image67.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image103.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image56.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image11.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image92.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image62.png
+/home/stevenl3/darknet/YOLO_test04/labels/train/image148.png
