@@ -39,7 +39,7 @@ sudo ldconfig
 1. Clone Repo and its Submodules:
 
    ```bash
-   git clone --recurse-submodules https://github.com/iamlab-cmu/robot-interface.git
+   git submodule update --init --recursive
    ```
 All directories below are given relative to `/robot-interface`.
 

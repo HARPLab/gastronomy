@@ -1,6 +1,6 @@
 # gastronomy/manipulation
 
-The manipulation repository consists of 5 packages.
+The manipulation repository consists of 7 packages.
 
 ## Robot-Interface
 
@@ -12,9 +12,23 @@ The DMP package in the dmp folder was created by the Intelligent Manipulation La
 
 ## DMP Weight Clustering and GAN
 
+The DMP weight clustering and GAN folder contains work by Ami Sawhney that is detailed in the Cutting section of the Sony-CMU Gastronomy Project Y2 Deliverables document.
+
+## Action Relation
+
+The action relation folder contains work by Mohit Sharma that is detailed in the Skill Preconditions section of the Sony-CMU Gastronomy Project Y2 Deliverables document.
+
+## Plating
+
+The plating folder contains code by Steven Lee that is detailed in the plating section of the Sony-CMU Gastronomy Project Y2 Deliverables document.
+
 ## Magnetic Stickers
 
-The magnetic stickers folder contains the code needed to run the localization and forcefeedback of the magnetic stickers according to the paper that is also located in the repository. The instructions to install and run everything is located in the folder's README.md. 
+The magnetic stickers folder contains the code by Kevin Zhang needed to run the localization and force feedback of the magnetic stickers according to the paper that is also located in the repository. The instructions to install and run everything is located in the folder's README.md. 
+
+## Azure Kinect Calibration
+
+The Azure Kinect Calibration folder contains the calibration scripts needed in order to calibrate the Azure Kinect cameras for use in most of the other packages. It depends on a modified perception package located here: https://github.com/iamlab-cmu/perception. 
 
 ## Plating (No longer supported)
 
