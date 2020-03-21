@@ -1,0 +1,10 @@
+todo:
+add path.yaml for handling hostname
+add new user based exp_clevr_sta.py --> it finds username and then uses only that config file
+
+done:
+
+add dynamic group parent using mechanism maybe exp_small:
+add checkpoint mechanism to only save recent checkpoints and not all of them
+get rid of  validXS
+add a way of adding info of the model information from config in the checkpoint
