@@ -1,0 +1,6 @@
+[submodule "perception/3dblender"]
+	path = perception/3dblender
+	url = https://github.com/mihirp1998/3dblender
+[submodule "perception/pytorch_disco"]
+	path = perception/pytorch_disco
+	url = https://shamitlal@bitbucket.org/adamharley/pytorch_disco.git
