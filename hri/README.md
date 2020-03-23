@@ -2,10 +2,14 @@
 
 Overview
 ======
+The goal of this project is to gather both passive and active social signals of humans in the setting of restaurants in order to model and determine their needs and the urgency of those needs over time. These metrics will be useful for monitoring restaurant efficiency, and helping robotics waitstaff to plan optimal service.
 
-The goal of this project is to gather both passive and active social signals of humans in the setting of restaurants in order to model and determine their states of Neediness (how much they would like help/attention) and Interruptibility (whether they are open to being helped) over time. These metrics will be useful for monitoring restaurant efficiency, and helping robotics waitstaff to plan optimal service.
-
-This code seeks to take input in the form of 2D RGB video from one angle in a restaurant, both live and archived. Features are extracted from these by OpenPose and OpenFace. These are then combined to provide more complex relationships between features, and used to classify customers into different categories of Neediness and Interruptibility.
+Below we give the tools we used to investigate Human-Robot Interaction in restaurant environments. This approach includes:
+* Collecting videos of natural restaurant interactions from online webstreams.
+* Automatically extracting features from these videos using OpenPose and object recognition, as well as noting events such as waiter visits.
+* Creating human-generated labels for the state of users and groups of users over time.
+* Building machine learning models to analyze trends and discover underlying patterns in these interations.
+* Developing a simulator that can play out restaurant scenarios, permute them to add noise to these scenes, and export a CSV file of the physical structure of these activities for testing our machine learning techniques on.
 
 Library Installation
 ======
@@ -28,8 +32,6 @@ Once these libraries and their dependencies are properly installed, they can be 
 
 
 ### The directory structure is as follows:
-  hri
-    ├── ...
     ├── customer-analysis
     ├── customer-simulator
     ├── gastronomy_web_cam_analysis
