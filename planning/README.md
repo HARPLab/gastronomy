@@ -4,7 +4,7 @@ This is a software package for robot planning in a restaurant setting. The detai
 
 - create a virtual machine and activate it (for more info refer to https://docs.python.org/3/library/venv.html)
 - install the required packages by using pip3 install -r requirements.txt
-- go into planning/scripts folder and run python3 State_Machine.py 90 5 4 True False complex_no_op_hybrid
+- go into planning/scripts folder and run "python3 State_Machine.py 90 5 4 True False complex_no_op_hybrid"
 - for more info please refer to the document
 
 # References
