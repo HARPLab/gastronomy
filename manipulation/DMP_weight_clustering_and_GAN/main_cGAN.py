@@ -23,19 +23,19 @@ from torch.utils.tensorboard import SummaryWriter
 
 num_dims=18
 num_labels=8
+labels=8
 z_size=3
 
-writer = SummaryWriter('/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/GAN/runs/exp18')
+#This is for writing results to Tensorboard - commented out
+#writer = SummaryWriter('/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/GAN/runs/exp18')
 
 #Instantiate dataset
 #DMP dataset
-##data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/combinedWts_transformedRefFrame/XYZABG_weights_separated_by_cut_new_generated_data/generated_data_combined_weights_all_6dims_with_initial_orientations_num_labels.txt'
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/combinedWts_transformedRefFrame/XYZABG_weights_combined/combined_weights_all_6dims_with_initial_orientations_num_labels.txt'
-data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/combinedWts_transformedRefFrame/XYZABG_weights_combined/combined_wts_xyz_dims.txt'
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/combinedWts_transformedRefFrame/XYZABG_weights_combined/combined_weights_6dims_only_2_cuts.txt'
+#Note: data_loc is the local path location of the DMP weight data file - update path location below 
+data_loc='~/combined_wts_xyz_dims.txt'
 dataset = DMPWeightData(data_loc,num_dims,num_labels,MNIST=False)
 
-batch_size=39 #156
+batch_size=39 
 data_loader=create_data_loader(dataset,batch_size)
 
 #Create instances of generator and discrim classes
@@ -48,8 +48,8 @@ num_epochs = 5000
 n_critic = 5
 display_step = 300
 loss = nn.BCELoss()
-d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=0.0003)
-g_optimizer = torch.optim.Adam(generator.parameters(), lr=0.0001)
+d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=0.0003) #Change discriminator learning rate (lr) here 
+g_optimizer = torch.optim.Adam(generator.parameters(), lr=0.0001) #Change discriminator learning rate (lr) here 
 
 gen_loss=[]
 discrim_loss=[]
@@ -105,30 +105,30 @@ for epoch in range(num_epochs):
     angledSliceR_wts_all.append(sample_DMPweights_arr[6,:,:])
     angledSliceL_wts_all.append(sample_DMPweights_arr[7,:,:])  
     
-    #Write results to tensorboard    
-    #writer.add_image('cut 4_new',sample_DMPweights[5,:,:].view(1,1,39),global_step=epoch)
-    #writer.add_image('cut 3_new',sample_DMPweights[4,:,:].view(1,1,39),global_step=epoch)    
-    writer.add_scalar('g_loss',g_loss,global_step=epoch)
-    writer.add_scalar('d_loss',d_loss,global_step=epoch)
+    #Write results to tensorboard   - commented out for now
+    # #writer.add_image('cut 4_new',sample_DMPweights[5,:,:].view(1,1,39),global_step=epoch)
+    # #writer.add_image('cut 3_new',sample_DMPweights[4,:,:].view(1,1,39),global_step=epoch)    
+    # writer.add_scalar('g_loss',g_loss,global_step=epoch)
+    # writer.add_scalar('d_loss',d_loss,global_step=epoch)
 
-    #Save gradients to tb
-    writer.add_histogram('disc l1.weight.grad', discriminator.model[0].weight.grad,global_step=epoch)
-    writer.add_histogram('disc l2.weight.grad', discriminator.model[3].weight.grad,global_step=epoch)
-    writer.add_histogram('disc l3.weight.grad', discriminator.model[6].weight.grad,global_step=epoch)
-    writer.add_histogram('disc outputLayer.weight.grad', discriminator.model[9].weight.grad,global_step=epoch)
-    writer.add_histogram('gen l1.weight.grad', generator.model[0].weight.grad,global_step=epoch)
-    writer.add_histogram('gen l2.weight.grad', generator.model[2].weight.grad,global_step=epoch)
-    writer.add_histogram('gen l3.weight.grad', generator.model[4].weight.grad,global_step=epoch)
-    writer.add_histogram('gen outputLayer.weight.grad', generator.model[6].weight.grad,global_step=epoch)
+    # #Save gradients to tb
+    # writer.add_histogram('disc l1.weight.grad', discriminator.model[0].weight.grad,global_step=epoch)
+    # writer.add_histogram('disc l2.weight.grad', discriminator.model[3].weight.grad,global_step=epoch)
+    # writer.add_histogram('disc l3.weight.grad', discriminator.model[6].weight.grad,global_step=epoch)
+    # writer.add_histogram('disc outputLayer.weight.grad', discriminator.model[9].weight.grad,global_step=epoch)
+    # writer.add_histogram('gen l1.weight.grad', generator.model[0].weight.grad,global_step=epoch)
+    # writer.add_histogram('gen l2.weight.grad', generator.model[2].weight.grad,global_step=epoch)
+    # writer.add_histogram('gen l3.weight.grad', generator.model[4].weight.grad,global_step=epoch)
+    # writer.add_histogram('gen outputLayer.weight.grad', generator.model[6].weight.grad,global_step=epoch)
 
-    writer.add_scalar('mean disc l1.weight.grad', discriminator.model[0].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean disc l2.weight.grad', discriminator.model[3].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean disc l3.weight.grad', discriminator.model[6].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean disc outputLayer.weight.grad', discriminator.model[9].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean gen l1.weight.grad', generator.model[0].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean gen l2.weight.grad', generator.model[2].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean gen l3.weight.grad', generator.model[4].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean gen outputLayer.weight.grad', generator.model[6].weight.grad.mean(),global_step=epoch)   
+    # writer.add_scalar('mean disc l1.weight.grad', discriminator.model[0].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean disc l2.weight.grad', discriminator.model[3].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean disc l3.weight.grad', discriminator.model[6].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean disc outputLayer.weight.grad', discriminator.model[9].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean gen l1.weight.grad', generator.model[0].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean gen l2.weight.grad', generator.model[2].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean gen l3.weight.grad', generator.model[4].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean gen outputLayer.weight.grad', generator.model[6].weight.grad.mean(),global_step=epoch)   
     
 plt.plot(gen_loss,'r')
 plt.plot(discrim_loss,'g')
@@ -138,13 +138,4 @@ plt.xlabel('num epochs')
 plt.ylabel('loss')
 plt.show
 
-#Save generator net weights to txt file
-base_path='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/GAN/generator_net_weights/'
-np.savetxt(base_path+'scoring.txt',np.reshape(np.array(scoring_wts_all),(num_epochs,num_dims)), delimiter=',') 
-np.savetxt(base_path+'pivChop.txt', np.reshape(np.array(pivotedChop_wts_all),(num_epochs,num_dims)), delimiter=',') 
-np.savetxt(base_path+'normalCut.txt', np.reshape(np.array(normalCut_wts_all),(num_epochs,num_dims)), delimiter=',') 
-np.savetxt(base_path+'movingPivChop.txt', np.reshape(np.array(movingPivotedChop_wts_all),(num_epochs,num_dims)), delimiter=',') 
-np.savetxt(base_path+'inHandCut.txt', np.reshape(np.array(inHandCut_wts_all),(num_epochs,num_dims)), delimiter=',') 
-np.savetxt(base_path+'dice.txt', np.reshape(np.array(dice_wts_all),(num_epochs,num_dims)), delimiter=',') 
-np.savetxt(base_path+'angledR.txt', np.reshape(np.array(angledSliceR_wts_all),(num_epochs,num_dims)), delimiter=',') 
-np.savetxt(base_path+'angledL.txt', np.reshape(np.array(angledSliceL_wts_all),(num_epochs,num_dims)), delimiter=',') 
+

@@ -21,30 +21,22 @@ from data import DMPWeightData, create_data_loader, visualize_colorplot_weights
 
 from torch.utils.tensorboard import SummaryWriter
 
-num_dims=27
+num_dims=18
 num_labels=0
 labels=0
 z_size=3
 
-writer = SummaryWriter('/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/GAN/runs/exp35')
+#This is for writing results to Tensorboard - commented out
+#writer = SummaryWriter('/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/GAN/runs/exp35')
 
 #Instantiate dataset
 #DMP dataset
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/combinedWts_transformedRefFrame/XYZABG_weights_combined/combined_weights_all_6dims_with_initial_orientations_num_labels.txt'
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/combinedWts_transformedRefFrame/XYZABG_weights_combined/combined_wts_xyz_dims.txt'
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/combinedWts_transformedRefFrame/XYZABG_weights_combined/18dims_noScoring.txt'
-
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/013120_updated_DMPwts/XYZABG_weights_combined/combined_weights_all_XYZB_4dims.txt'
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/013120_updated_DMPwts/XYZABG_weights_combined/combined_weights_all_XYZB_4dims_w_IOs.txt'
-# data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/013120_updated_DMPwts/XYZABG_weights_combined/combined_weights_all_XYZB_4dims_w_normalized_IOs.txt'
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/013120_updated_DMPwts/XYZABG_weights_combined/combined_weights_all_XYZB_4dims_w_normalized_IOs_no_scoring.txt'
-#data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/013120_updated_DMPwts/XYZABG_weights_combined/combined_weights_all_XYZB_4dims_w_all_features_normalized_no_scoring.txt'
-data_loc='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/013120_updated_DMPwts/XYZABG_weights_combined/combined_wts_all_XYZB_4dims_w_normalized_IOs_group1.txt'
-
-
+#DMP dataset
+#Note: data_loc is the local path location of the DMP weight data file - update path location below 
+data_loc='~/combined_wts_xyz_dims.txt'
 dataset = DMPWeightData(data_loc,num_dims,num_labels,MNIST=False)
 
-batch_size=39 #156
+batch_size=39 
 data_loader=create_data_loader(dataset,batch_size)
 
 #Create instances of generator and discrim classes
@@ -57,8 +49,8 @@ num_epochs = 5000
 n_critic = 5
 display_step = 300
 loss = nn.BCELoss()
-d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=0.0003)
-g_optimizer = torch.optim.Adam(generator.parameters(), lr=0.0001)
+d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=0.0003) #Change discriminator learning rate (lr) here 
+g_optimizer = torch.optim.Adam(generator.parameters(), lr=0.0001) #Change discriminator learning rate (lr) here 
 
 gen_loss=[]
 discrim_loss=[]
@@ -104,37 +96,29 @@ for epoch in range(num_epochs):
     #Save weights in an array    
     
     sample_DMPweights_arr=sample_DMPweights.numpy()
-    # scoring_wts_all.append(sample_DMPweights_arr[0,:,:])
-    # pivotedChop_wts_all.append(sample_DMPweights_arr[1,:,:])
-    # normalCut_wts_all.append(sample_DMPweights_arr[2,:,:])
-    # movingPivotedChop_wts_all.append(sample_DMPweights_arr[3,:,:])
-    # inHandCut_wts_all.append(sample_DMPweights_arr[4,:,:])
-    # dice_wts_all.append(sample_DMPweights_arr[5,:,:])
-    # angledSliceR_wts_all.append(sample_DMPweights_arr[6,:,:])
-    # angledSliceL_wts_all.append(sample_DMPweights_arr[7,:,:])  
     
-    #Write results to tensorboard    
+    #Write results to tensorboard  - commented out
     #writer.add_image('cut 4_new',sample_DMPweights[5,:,:].view(1,1,39),global_step=epoch)
     #writer.add_image('cut 3_new',sample_DMPweights[4,:,:].view(1,1,39),global_step=epoch)    
-    writer.add_scalar('g_loss',g_loss,global_step=epoch)
-    writer.add_scalar('d_loss',d_loss,global_step=epoch)
+    # writer.add_scalar('g_loss',g_loss,global_step=epoch)
+    # writer.add_scalar('d_loss',d_loss,global_step=epoch)
 
-    #Save gradients to tb
-    writer.add_histogram('disc l1.weight.grad', discriminator.model[0].weight.grad,global_step=epoch)
-    writer.add_histogram('disc l2.weight.grad', discriminator.model[3].weight.grad,global_step=epoch)
-    #writer.add_histogram('disc l3.weight.grad', discriminator.model[6].weight.grad,global_step=epoch)
-    #writer.add_histogram('disc outputLayer.weight.grad', discriminator.model[9].weight.grad,global_step=epoch)
-    writer.add_histogram('gen l1.weight.grad', generator.model[0].weight.grad,global_step=epoch)
-    writer.add_histogram('gen l2.weight.grad', generator.model[2].weight.grad,global_step=epoch)
-    #writer.add_histogram('gen l3.weight.grad', generator.model[4].weight.grad,global_step=epoch)
-    #writer.add_histogram('gen outputLayer.weight.grad', generator.model[6].weight.grad,global_step=epoch)
+    # #Save gradients to tb
+    # writer.add_histogram('disc l1.weight.grad', discriminator.model[0].weight.grad,global_step=epoch)
+    # writer.add_histogram('disc l2.weight.grad', discriminator.model[3].weight.grad,global_step=epoch)
+    # #writer.add_histogram('disc l3.weight.grad', discriminator.model[6].weight.grad,global_step=epoch)
+    # #writer.add_histogram('disc outputLayer.weight.grad', discriminator.model[9].weight.grad,global_step=epoch)
+    # writer.add_histogram('gen l1.weight.grad', generator.model[0].weight.grad,global_step=epoch)
+    # writer.add_histogram('gen l2.weight.grad', generator.model[2].weight.grad,global_step=epoch)
+    # #writer.add_histogram('gen l3.weight.grad', generator.model[4].weight.grad,global_step=epoch)
+    # #writer.add_histogram('gen outputLayer.weight.grad', generator.model[6].weight.grad,global_step=epoch)
 
-    writer.add_scalar('mean disc l1.weight.grad', discriminator.model[0].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean disc l2.weight.grad', discriminator.model[3].weight.grad.mean(),global_step=epoch)
-    #writer.add_scalar('mean disc l3.weight.grad', discriminator.model[6].weight.grad.mean(),global_step=epoch)
-    #writer.add_scalar('mean disc outputLayer.weight.grad', discriminator.model[9].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean gen l1.weight.grad', generator.model[0].weight.grad.mean(),global_step=epoch)
-    writer.add_scalar('mean gen l2.weight.grad', generator.model[2].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean disc l1.weight.grad', discriminator.model[0].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean disc l2.weight.grad', discriminator.model[3].weight.grad.mean(),global_step=epoch)
+    # #writer.add_scalar('mean disc l3.weight.grad', discriminator.model[6].weight.grad.mean(),global_step=epoch)
+    # #writer.add_scalar('mean disc outputLayer.weight.grad', discriminator.model[9].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean gen l1.weight.grad', generator.model[0].weight.grad.mean(),global_step=epoch)
+    # writer.add_scalar('mean gen l2.weight.grad', generator.model[2].weight.grad.mean(),global_step=epoch)
     #writer.add_scalar('mean gen l3.weight.grad', generator.model[4].weight.grad.mean(),global_step=epoch)
     #writer.add_scalar('mean gen outputLayer.weight.grad', generator.model[6].weight.grad.mean(),global_step=epoch)   
 
@@ -147,17 +131,4 @@ plt.title('generator loss vs discriminator loss')
 plt.xlabel('num epochs')
 plt.ylabel('loss')
 plt.show()
-
-
-#Save generator net weights to txt file
-base_path='/home/test2/Documents/Data/post_processing/weights_sep_traj/120319/GAN/generator_net_weights/'
-# np.savetxt(base_path+'scoring.txt',np.reshape(np.array(scoring_wts_all),(num_epochs,num_dims)), delimiter=',') 
-# np.savetxt(base_path+'pivChop.txt', np.reshape(np.array(pivotedChop_wts_all),(num_epochs,num_dims)), delimiter=',') 
-# np.savetxt(base_path+'normalCut.txt', np.reshape(np.array(normalCut_wts_all),(num_epochs,num_dims)), delimiter=',') 
-# np.savetxt(base_path+'movingPivChop.txt', np.reshape(np.array(movingPivotedChop_wts_all),(num_epochs,num_dims)), delimiter=',') 
-# np.savetxt(base_path+'inHandCut.txt', np.reshape(np.array(inHandCut_wts_all),(num_epochs,num_dims)), delimiter=',') 
-# np.savetxt(base_path+'dice.txt', np.reshape(np.array(dice_wts_all),(num_epochs,num_dims)), delimiter=',') 
-# np.savetxt(base_path+'angledR.txt', np.reshape(np.array(angledSliceR_wts_all),(num_epochs,num_dims)), delimiter=',') 
-# np.savetxt(base_path+'angledL.txt', np.reshape(np.array(angledSliceL_wts_all),(num_epochs,num_dims)), delimiter=',')
-np.savetxt(base_path+'last_iteration_generated_wts.txt', np.reshape(np.array(sample_DMPweights_arr),(batch_size,num_dims)), delimiter=',') 
 

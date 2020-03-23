@@ -20,7 +20,6 @@ class DMPWeightData(Dataset):
         if self.MNIST==False:
             self.transform = transform
             DMPweights_df = pd.read_csv(data_loc,header=None)       
-            #import ipdb;ipdb.set_trace() 
             if self.num_labels!=0:
                 self.labels = DMPweights_df[DMPweights_df.columns[0]]        
                 self.DMPweights = DMPweights_df.iloc[:, 1:].values.astype('float64').reshape(-1,1,1,self.num_dims)
@@ -46,7 +45,6 @@ class DMPWeightData(Dataset):
 
 
     def __getitem__(self, idx):
-        #import pdb; pdb.set_trace()
         if self.MNIST==False:
             if self.num_labels!=0:
                 label = self.labels[idx]
