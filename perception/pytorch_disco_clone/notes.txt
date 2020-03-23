@@ -1,0 +1,25 @@
+todo:
+	retrieval res in expectation is already fast! dont waste time!!
+	train pair in maximization also we can check if we can make it fast!!
+	make retrieval res in maximiaztion step batch wise to save compute!!!
+
+	#once all bugs fixed
+
+	make the pool multi gpu .. put it on a different gpu maybe!!!!
+	make all similarity convolution operations with no grad all before model.train()!!!
+	
+doing:
+
+	add visualization for hard mining!!
+done:
+	fix bugs negative sampling!!!!
+
+	start with random initialization use ground truth anontations and remove the update in pool. and  overfit the model!!!!
+
+
+
+# 10 samples
+# 0.7807922630088553a
+# 10 samples
+normal vqvae
+#0.778

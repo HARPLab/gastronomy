@@ -1,0 +1,12 @@
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image50.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image46.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image51.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image47.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image45.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image48.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image49.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image44.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image43.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image1.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image13.png
+/home/stevenl3/darknet/YOLO_test03/labels/valid/image42.png

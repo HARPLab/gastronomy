@@ -54,10 +54,8 @@ def discriminator_train_step(batch_size, discriminator, generator, d_optimizer, 
         elif num_labels==0:
             real_validity = discriminator(real_DMPweights,labels)
 
-        #real_loss = loss(real_validity, Variable(torch.ones(batch_size)))
         real_loss = loss(real_validity, Variable(torch.FloatTensor(np.random.uniform(0.7, 1.2, batch_size))))
-        #real_loss = loss(real_validity, Variable(torch.FloatTensor(np.random.uniform(0, 0.3, batch_size))))
-        
+       
         # train with fake DMPweights        
         z = Variable(torch.randn(batch_size, z_size)) #z is random noise  
 
@@ -69,10 +67,7 @@ def discriminator_train_step(batch_size, discriminator, generator, d_optimizer, 
             fake_DMPweights=generator(z,labels)
             fake_validity=discriminator(fake_DMPweights,labels)
 
-        #fake_loss = loss(fake_validity, Variable(torch.zeros(batch_size)))
-        fake_loss = loss(fake_validity,Variable(torch.FloatTensor(np.random.uniform(0, 0.3, batch_size))))
-        #fake_loss = loss(fake_validity,Variable(torch.FloatTensor(np.random.uniform(0.7, 1.2, batch_size))))
-        
+        fake_loss = loss(fake_validity,Variable(torch.FloatTensor(np.random.uniform(0, 0.3, batch_size))))        
         d_loss = real_loss + fake_loss  
         d_loss.backward()  
         d_optimizer.step()

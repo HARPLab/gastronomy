@@ -1,0 +1,5 @@
+classes = 14
+train  = /home/stevenl3/darknet/YOLO_test03/food-train.txt  
+valid  = /home/stevenl3/darknet/YOLO_test03/food-train.txt  
+names = /home/stevenl3/darknet/YOLO_test03/food.names  
+backup = /home/stevenl3/darknet/YOLO_test03/weights
