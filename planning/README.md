@@ -1,7 +1,5 @@
 # Planning
 
-# Planning
-
 This is a software package for robot planning in a restaurant setting. The details of the planner and the restaurant model is in [1].
 
 # VREP simulation 
