@@ -28,9 +28,12 @@ Once these libraries and their dependencies are properly installed, they can be 
 
 
 ### The directory structure is as follows:
-    .
+  hri
     ├── ...
-    ├── hri                  # All HRI code and samples
+    ├── customer-analysis
+    ├── customer-simulator
+    ├── gastronomy_web_cam_analysis
+    ├── sony-hri-2019                  # All HRI code and samples from 2019
     │   ├── OpenFace         # OpenFace source code and compiled libraries
     │   ├── openpose         # OpenPose source code and compiled libraries
     │   └── sony-hri         # HRI deliverables
@@ -42,25 +45,6 @@ Once these libraries and their dependencies are properly installed, they can be 
 
 > For all video names passed to demo scripts, the short name of any video contained in the example-inputs folder is all that is required, not a full file path.
 
-OpenFace Analysis
----------
-Within the directory demos/OpenFace_analysis:
-`./openface_video_processing.sh $video_name.mp4`
-
-Output will appear in the outputs folder in "output/processed_$video_name/openface"
-
-OpenPose Analysis 
----------
-Within the directory demos/OpenPose_analysis:
-`./openpose_video_processing.sh $video_name.mp4`
-
-Output will appear in the outputs folder in "output/processed_$video_name/openpose"
-
-OpenFace Live Demo
----------
-Within the directory demos/OpenFace_livedemo:
-`./openface_livedemo.sh`
-This downloads and unpacks a pre-compiled Windows Visual Studio exe from the OpenFace project, and prints the path to the specific demo file. The enclosed file "OpenFaceOffline.exe" can be run directly on a Windows machine without further installs.
 
 
 
