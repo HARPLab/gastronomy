@@ -20,7 +20,7 @@ The action relation folder contains work by Mohit Sharma that is detailed in the
 
 ## Plating
 
-The plating folder contains code by Steven Lee that is detailed in the plating section of the Sony-CMU Gastronomy Project Y2 Deliverables document.
+The plating folder contains code by Steven Lee that is detailed in the plating section of the Sony-CMU Gastronomy Project Y2 Deliverables document. In addition, it contains previous code by Travers Rhodes to learn trajectories from demonstrations that are used in the plating demo. It can be used with any robot that has a ROS joint controller interface. It includes code to segment demonstrations using a changepoint detection algorithm, and it contains code to translate and execute those trajectories on a robot.
 
 ## Magnetic Stickers
 
@@ -29,7 +29,3 @@ The magnetic stickers folder contains the code by Kevin Zhang needed to run the 
 ## Azure Kinect Calibration
 
 The Azure Kinect Calibration folder contains the calibration scripts needed in order to calibrate the Azure Kinect cameras for use in most of the other packages. It depends on a modified perception package located here: https://github.com/iamlab-cmu/perception. 
-
-## Plating (No longer supported)
-
-The Plating package in the plating folder was created by Travers Rhodes to learn trajectories from demonstrations that are used in the plating demo. It can be used with any robot that has a ROS joint controller interface. It includes code to segment demonstrations using a changepoint detection algorithm, and it contains code to translate and execute those trajectories on a robot.
