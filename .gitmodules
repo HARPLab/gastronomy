@@ -4,3 +4,12 @@
 [submodule "perception/pytorch_disco"]
 	path = perception/pytorch_disco
 	url = https://shamitlal@bitbucket.org/adamharley/pytorch_disco.git
+[submodule "hri/restaurant-vrep-sim"]
+	path = hri/restaurant-vrep-sim
+	url = https://github.com/HARPLab/restaurant-vrep-sim.git
+[submodule "hri/restaurant-vid-analysis"]
+	path = hri/restaurant-vid-analysis
+	url = https://github.com/HARPLab/restaurant-vid-analysis.git
+[submodule "hri/gastronomy_web_cam_analysis"]
+	path = hri/gastronomy_web_cam_analysis
+	url = https://github.com/HARPLab/gastronomy_web_cam_analysis.git
