@@ -1,5 +1,4 @@
-HRI 
-
+HRI
 
 OpenFace Analysis
 ---------
