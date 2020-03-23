@@ -10,6 +10,6 @@ This a software package for creating a restaurant environment in VREP simulator.
 
 # References
 
-[1] A. Mohseni-Kabir, M. M. Veloso, and M. Likhachev, “Efficient robot planning for achieving multipleindependent partially observable tasks that evolve over time,” in ICAPS, 2020.
+[1] A. Mohseni-Kabir, M. M. Veloso, and M. Likhachev, “Efficient robot planning for achieving multiple independent partially observable tasks that evolve over time,” in ICAPS, 2020.
 
 
