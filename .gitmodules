@@ -19,3 +19,6 @@
 [submodule "hri/customer-simulator"]
 	path = hri/customer-simulator
 	url = https://github.com/HARPLab/customer-simulator.git
+[submodule "hri/psiturk-legibility-study"]
+	path = hri/psiturk-legibility-study
+	url = https://github.com/HARPLab/psiturk-legibility-study.git
