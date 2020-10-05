@@ -9,7 +9,9 @@ This is a software package for robot planning in a restaurant setting. The detai
 
 # References
 [1] A. Mohseni-Kabir, M. Likhachev, and M. Veloso, "waiting Tables as a Robot Planning Problem," in IJCAI Workshop on AIxFood, 2019.
-[2] A. Mohseni-Kabir, M. M. Veloso, and M. Likhachev, “efficient robot planning for achieving multiple independent partially observable tasks that evolve over time,” in ICAPS, 2020.
+
+[2] A. Mohseni-Kabir, M. M. Veloso, and M. Likhachev, “efficient robot planning for achieving multiple independent partially observable tasks that evolve over time,” in ICAPS, 2020
+
 [3] A. Mohseni-Kabir, M. Veloso, and M. Likhachev, "optimal Planning over Long and Infinite Horizons for Achieving Independent Partially-Observable Tasks that Evolve over Time," submitted to AAAI, 2021.
 
 
