@@ -2,9 +2,9 @@
 
 The manipulation repository consists of 7 packages.
 
-## Robot-Interface
+## Franka-Interface and Frankapy
 
-The Robot-Interface package in the robot-interface folder was created by the Intelligent Manipulation Lab to control the Franka Panda Research Robot at 1kHz. Installation instructions are located in the README.md file in the robot-interface folder. 
+The Franka-Interface package in the franka-interface folder and the FrankaPy package in the frankapy folder were created by the Intelligent Manipulation Lab to control the Franka Panda Research Robot at 1kHz. Installation instructions are located in the README.md file in the each folder. 
 
 ## DMP
 
