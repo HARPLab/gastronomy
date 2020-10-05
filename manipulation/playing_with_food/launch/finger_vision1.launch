@@ -1,0 +1,14 @@
+<launch>
+  <node name="finger_vision1" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/video0" />
+    <param name="image_width" value="1920" />
+    <param name="image_height" value="1080" />
+    <param name="pixel_format" value="mjpeg" />
+    <param name="camera_frame_id" value="finger_vision1" />
+    <param name="io_method" value="mmap"/>
+  </node>
+  <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <remap from="image" to="/finger_vision1/image_raw"/>
+    <param name="autosize" value="true" />
+  </node>
+</launch>
