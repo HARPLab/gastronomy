@@ -11,27 +11,28 @@ import math
 
 
 from draw_env import *
-from pomdp_client import *
+from pomdp_client_restaurant import *
 
 GLOBAL_TIME = 0
 print_status = False
 
-class ClientPOMDPComplex(ClientPOMDP):
+class ClientPOMDPComplex(ClientPOMDPRestaurant):
 	metadata = {'render.modes': ['human']}
 
-	def __init__(self, task, robot, navigation_goals, gamma, random, reset_random, deterministic, no_op, run_on_robot):
+	def __init__(self, task, robot, navigation_goals, gamma, random, reset_random, deterministic, no_op):
 		global print_status
-		ClientPOMDP.__init__(self, task, robot, navigation_goals, gamma, random, reset_random, deterministic, no_op, run_on_robot)
+		self.deterministic = deterministic
+		self.gamma = gamma
+		self.random = random
+		self.reset_random = reset_random
+		self.task = task
+		self.robot = robot
+		self.no_op = no_op
 
 		self.actions = []
 		self.name = "pomdp_task"
-		if not self.KITCHEN:
-			self.non_robot_features = ["cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
-					"time_since_hand_raise", "current_request","customer_satisfaction"]
-		else:
-			self.non_robot_features = ["cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
-					"time_since_hand_raise", "food_picked_up","current_request","customer_satisfaction"]
-
+		self.non_robot_features = ["cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
+				"time_since_hand_raise","current_request","customer_satisfaction"]
 		self.robot_features = False
 		self.navigation_goals_len = len(navigation_goals) 		
 
@@ -39,9 +40,6 @@ class ClientPOMDPComplex(ClientPOMDP):
 		self.actions.append(Action(1, 'no op - table '+str(self.task.table.id), self.task.table.id, True, 1))
 		self.actions.append(Action(2, 'serve - table '+str(self.task.table.id), self.task.table.id, True, 1))
 		self.actions.append(Action(3, 'food not ready - table '+str(self.task.table.id), self.task.table.id, True, 1))
-		
-		if self.KITCHEN:
-			self.actions.append(Action(4, 'pick up food for table '+str(self.task.table.id), self.task.table.id, True, 1))
 
 		self.non_navigation_actions_len = len(self.actions)
 		self.nA = self.non_navigation_actions_len + self.navigation_goals_len 
@@ -52,37 +50,21 @@ class ClientPOMDPComplex(ClientPOMDP):
 			self.actions.append(act)
 			self.navigation_actions.append(act)
 
-		################## go to kitchen + pick up actions
-		if self.KITCHEN:
-			nA_prev = self.nA
-			self.nA += self.navigation_goals_len 
-			for i in range(nA_prev, self.nA):
-				act = Action(i, 'go to kitchen', (i-nA_prev), False, None, True)
-				self.actions.append(act)
-				self.navigation_actions.append(act)
-
-		###################################################
-
 		if no_op:
 			self.valid_actions = self.actions[0:self.non_navigation_actions_len]
 			self.valid_actions.append(self.actions[self.task.table.id + self.non_navigation_actions_len])
-			if self.KITCHEN:
-				self.valid_actions.append(self.actions[self.task.table.id + nA_prev])
 		else:
 			self.valid_actions = self.actions
 
 		self.pomdps_actions = self.actions[0:self.non_navigation_actions_len] + [self.actions[self.task.table.id + self.non_navigation_actions_len]]
-		if self.KITCHEN:
-			self.pomdps_actions += [self.actions[self.task.table.id + nA_prev]]
-
 		self.feasible_actions = list(self.valid_actions)
 		# self.feasible_actions.remove(self.feasible_actions[0])
 
 		self.noop_actions = {}
-		self.noop_actions['1'] = self.actions[self.no_op_action_id]
-		self.noop_actions['2'] = Action(self.no_op_action_id, "no op 2t - table "+str(self.task.table.id), self.task.table.id, True, 2)
-		self.noop_actions['3'] = Action(self.no_op_action_id, "no op 3t - table "+str(self.task.table.id), self.task.table.id, True, 3)
-		self.noop_actions['4'] = Action(self.no_op_action_id, "no op 4t - table "+str(self.task.table.id), self.task.table.id, True, 4)
+		self.noop_actions['1'] = self.actions[1]
+		self.noop_actions['2'] = Action(1, "no op 2t - table "+str(self.task.table.id), self.task.table.id, True, 2)
+		self.noop_actions['3'] = Action(1, "no op 3t - table "+str(self.task.table.id), self.task.table.id, True, 3)
+		self.noop_actions['4'] = Action(1, "no op 4t - table "+str(self.task.table.id), self.task.table.id, True, 4)
 
 		# for a in self.pomdps_actions:
 		# 	a.print()
@@ -115,14 +97,18 @@ class ClientPOMDPComplex(ClientPOMDP):
 					obs_feature_count += 1
 
 		# robot's features
+		self.robot_indices = []
+		self.robot_obs_indices = []
 		for feature in self.robot.get_features():
 			if feature.type == "discrete" and feature.name in ["x","y"]:
+				self.robot_indices.append(feature_count)
 				self.nS *= int((feature.high - feature.low) / feature.discretization) + 1
 				self.state_space_dim += (int((feature.high - feature.low) / feature.discretization) + 1,)
 				obs.append((feature.low, feature.high, feature.discretization, feature.name))
 				self.feature_indices[feature.name] = feature_count
 				feature_count += 1
 				if feature.observable:
+					self.robot_obs_indices.append(obs_feature_count)
 					self.observation_space_dim += (int((feature.high - feature.low) / feature.discretization) + 1,)
 					self.nO *= int((feature.high - feature.low) / feature.discretization) + 1
 					self.obs_feature_indices[feature.name] = obs_feature_count
@@ -136,6 +122,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 		self.transition_function = {}
 		self.observation_function = {}
+		self.belief_library = {}
 
 
 		self.dense_reward = True
@@ -188,9 +175,6 @@ class ClientPOMDPComplex(ClientPOMDP):
 		new_state = deepcopy(start_state)
 
 		distance_to_table = self.distance((start_state[self.feature_indices['x']],start_state[self.feature_indices['y']]),(self.task.table.goal_x,self.task.table.goal_y))
-
-		if self.KITCHEN:
-			distance_to_kitchen = self.distance((start_state[self.feature_indices['x']],start_state[self.feature_indices['y']]),(self.kitchen_pos[0],self.kitchen_pos[1]))
 		
 		nav_action = False
 		random_cooking_time = False
@@ -203,19 +187,10 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 		if not action.type: 
 			current_position = (start_state[self.feature_indices['x']],start_state[self.feature_indices['y']])
+			new_position, reward_nav, k_steps = self.simulate_navigation_action(action, current_position)
 
-			if not action.kitchen:
-				new_position, reward_nav, k_steps = self.simulate_navigation_action(action, current_position)
-
-				if new_position != (self.task.table.goal_x,self.task.table.goal_y):
-					reward_nav = 0.0
-
-			elif action.kitchen:
-				new_position, reward_nav, k_steps = self.simulate_go_to_kitchen_action(action, current_position)
-
-				if not self.is_part_of_action_space(action): ## be careful, this won't work if pomdps share actions
-					reward_nav = 0.0
-
+			if new_position != (self.task.table.goal_x,self.task.table.goal_y):
+				reward_nav = 0.0
 
 			if all_poss_actions or self.is_part_of_action_space(action):
 				new_state [self.feature_indices['x']] = new_position[0]
@@ -346,7 +321,6 @@ class ClientPOMDPComplex(ClientPOMDP):
 					sat = self.compute_satisfaction(max_time, max_sat, start_time, min(start_time+1,max_time), start_sat, threshold)
 					new_state [time_index] = min(start_time+1,max_time)
 				else:
-					# do not change satisfaction if people are eating or drinking, this is needed for actions of length > 1
 					sat = self.compute_satisfaction(max_time, max_sat, start_time, start_time, start_sat, threshold)
 					# new_state [time_index] = min(start_time+1,max_time)
 
@@ -360,23 +334,18 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 				new_req = 0
 				if action.id == 2 and distance_to_table == 0 and current_req != 8:
-					if current_req == 1 or current_req == 2 or \
-					(current_req == 3 and start_state [self.feature_indices['cooking_status']] == 2 and (not self.KITCHEN or start_state[self.feature_indices['food_picked_up']] == 1)) or \
-						(current_req == 4 and start_state [self.feature_indices['food']] == 3 and (not self.KITCHEN or start_state[self.feature_indices['food_picked_up']] == 1)) or \
+					if current_req == 1 or current_req == 2 or (current_req == 3 and start_state [self.feature_indices['cooking_status']] == 2) or \
+						(current_req == 4 and start_state [self.feature_indices['food']] == 3) or \
 						(current_req == 5 and start_state [self.feature_indices['water']] == 3) or current_req == 6 or current_req == 7: 
 
 						new_state [self.feature_indices['time_since_hand_raise']] = 0
 
-						if (current_req == 3 and start_state [self.feature_indices['cooking_status']] == 2 and (not self.KITCHEN or start_state[self.feature_indices['food_picked_up']] == 1)):
+						if (current_req == 3 and start_state [self.feature_indices['cooking_status']] == 2):
 							new_state [self.feature_indices['food']] = 1
-							if self.KITCHEN: 
-								new_state[self.feature_indices['food_picked_up']] = 0
 
-						if (current_req == 4 and start_state [self.feature_indices['food']] == 3 and (not self.KITCHEN or start_state[self.feature_indices['food_picked_up']] == 1)):
+						if (current_req == 4 and start_state [self.feature_indices['food']] == 3):
 							new_state [self.feature_indices['time_since_served']] = 0
 							new_state [self.feature_indices['water']] = 1
-							if self.KITCHEN:
-								new_state[self.feature_indices['food_picked_up']] = 0
 
 						new_req = current_req + 1
 						new_state [self.feature_indices['current_request']] = new_req
@@ -423,7 +392,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 					outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))	
 
 
-				elif action.id == 3 and current_req == 3 and start_state [self.feature_indices['cooking_status']] < 2 and distance_to_table == 0:
+				elif current_req == 3 and action.id == 3 and start_state [self.feature_indices['cooking_status']] < 2 and distance_to_table == 0:
 					new_state [self.feature_indices['customer_satisfaction']] = self.state_space[self.feature_indices['customer_satisfaction']][1] - 1
 					outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
 					
@@ -435,23 +404,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 					reward += 1.0
 					outcomes.append((1.0,self.get_state_index(new_state), reward, terminal, 1, False))
 
-				elif self.KITCHEN and distance_to_kitchen == 0 and action.id == 4 and (current_req == 3 and start_state [self.feature_indices['cooking_status']] == 2)\
-					and start_state [self.feature_indices['food_picked_up']] == 0:
-					new_state [self.feature_indices['food_picked_up']] = 1
-					# reward += 1.0
-					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
-
-				elif self.KITCHEN and distance_to_kitchen == 0 and action.id == 4 and (current_req == 4 and start_state [self.feature_indices['food']] == 3)\
-					and start_state [self.feature_indices['food_picked_up']] == 0:
-					new_state [self.feature_indices['food_picked_up']] = 1
-					# reward += 1.0
-					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
-
 				elif (action.id == 3 or action.id == 2 and action.id == 0 and action.id == 1) and distance_to_table != 0:
-					reward += -np.Inf
-					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
-
-				elif self.KITCHEN and action.id == 4 and distance_to_kitchen != 0:
 					reward += -np.Inf
 					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
 

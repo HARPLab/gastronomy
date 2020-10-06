@@ -10,16 +10,23 @@ import math
 
 
 from draw_env import *
-from pomdp_client import *
+from pomdp_client_restaurant import *
 
 print_status = False
 
-class ClientPOMDPSimple(ClientPOMDP):
+class ClientPOMDPSimple(ClientPOMDPRestaurant):
 	metadata = {'render.modes': ['human']}
 
 	def __init__(self, task, robot, navigation_goals, gamma, random, reset_random, deterministic, no_op):
-		global print_status
-		ClientPOMDP.__init__(self, task, robot, navigation_goals, gamma, random, reset_random, deterministic, no_op, run_on_robot)
+		self.deterministic = deterministic
+		print ("deterministic: ", self.deterministic, " no op: ", no_op)
+		self.gamma = gamma
+		self.random = random
+		self.reset_random = reset_random
+		self.print_status = False
+		self.task = task
+		self.robot = robot
+		self.no_op = no_op
 
 		self.name = "pomdp_task"
 		self.non_robot_features = ["hand_raise", "time_since_hand_raise","current_request","customer_satisfaction"]
@@ -29,7 +36,7 @@ class ClientPOMDPSimple(ClientPOMDP):
 		self.actions = []
 		self.actions.append(Action(0, "I'll be back - table "+str(self.task.table.id), self.task.table.id, True, 1))
 		self.actions.append(Action(1, 'no op - table '+str(self.task.table.id), self.task.table.id, True, 1))
-		self.actions.append(Action(2, 'serve - table '+str(self.task.table.id), self.task.table.id, True, 2))
+		self.actions.append(Action(2, 'serve - table '+str(self.task.table.id), self.task.table.id, True, 1))
 
 
 		self.non_navigation_actions_len = len(self.actions)
@@ -53,10 +60,10 @@ class ClientPOMDPSimple(ClientPOMDP):
 		# self.feasible_actions.remove(self.feasible_actions[0])
 
 		self.noop_actions = {}
-		self.noop_actions['1'] = self.actions[self.no_op_action_id]
-		self.noop_actions['2'] = Action(self.no_op_action_id, "no op 2t - table "+str(self.task.table.id), self.task.table.id, True, 2)
-		self.noop_actions['3'] = Action(self.no_op_action_id, "no op 3t - table "+str(self.task.table.id), self.task.table.id, True, 3)
-		self.noop_actions['4'] = Action(self.no_op_action_id, "no op 4t - table "+str(self.task.table.id), self.task.table.id, True, 4)
+		self.noop_actions['1'] = self.actions[1]
+		self.noop_actions['2'] = Action(1, "no op 2t - table "+str(self.task.table.id), self.task.table.id, True, 2)
+		self.noop_actions['3'] = Action(1, "no op 3t - table "+str(self.task.table.id), self.task.table.id, True, 3)
+		self.noop_actions['4'] = Action(1, "no op 4t - table "+str(self.task.table.id), self.task.table.id, True, 4)
 
 		# for a in self.actions:
 		# 	a.print()
@@ -91,14 +98,18 @@ class ClientPOMDPSimple(ClientPOMDP):
 					obs_feature_count += 1
 
 		# robot's features
+		self.robot_indices = []
+		self.robot_obs_indices = []
 		for feature in self.robot.get_features():
 			if feature.type == "discrete" and feature.name in ["x","y"]:
+				self.robot_indices.append(feature_count)
 				self.nS *= int((feature.high - feature.low) / feature.discretization) + 1
 				self.state_space_dim += (int((feature.high - feature.low) / feature.discretization) + 1,)
 				obs.append((feature.low, feature.high, feature.discretization, feature.name))
 				self.feature_indices[feature.name] = feature_count
 				feature_count += 1
 				if feature.observable:
+					self.robot_obs_indices.append(obs_feature_count)
 					self.observation_space_dim += (int((feature.high - feature.low) / feature.discretization) + 1,)
 					self.nO *= int((feature.high - feature.low) / feature.discretization) + 1
 					self.obs_feature_indices[feature.name] = obs_feature_count
@@ -113,6 +124,7 @@ class ClientPOMDPSimple(ClientPOMDP):
 
 		self.transition_function = {}
 		self.observation_function = {}
+		self.belief_library = {}
 
 
 		self.dense_reward = True

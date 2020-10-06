@@ -16,22 +16,25 @@ from pomdp_solver import *
 from pomdp_client import *
 from pomdp_client_simple import *
 from pomdp_client_complex import *
+from pomdp_client_package import *
 
 GLOBAL_TIME = 0
 
 class AgentHPOMDP(AgentPOMDP):
 	metadata = {'render.modes': ['human']}
 
-	def __init__(self, pomdp_tasks, pomdp_solvers, tasks, robot, random, horizon, gamma, run_on_robot):
+	def __init__(self, pomdp_tasks, pomdp_solvers, tasks, robot, random, horizon, gamma):
 		self.random = random
 		self.print_status = False
 		self.pomdp_tasks = []
 		pomdp_id = 0
 		for pomdp_task in pomdp_tasks:
 			if isinstance(pomdp_task,ClientPOMDPSimple):
-				self.pomdp_tasks.append(HPOMDPSimple(pomdp_id, pomdp_task, pomdp_solvers[pomdp_id], tasks[pomdp_id], robot, random, horizon, gamma, run_on_robot))
+				self.pomdp_tasks.append(HPOMDPSimple(pomdp_id, pomdp_task, pomdp_solvers[pomdp_id], tasks[pomdp_id], robot, random, horizon, gamma))
 			if isinstance(pomdp_task,ClientPOMDPComplex):
-				self.pomdp_tasks.append(HPOMDPComplex(pomdp_id, pomdp_task, pomdp_solvers[pomdp_id], tasks[pomdp_id], robot, random, horizon, gamma, run_on_robot))
+				self.pomdp_tasks.append(HPOMDPComplex(pomdp_id, pomdp_task, pomdp_solvers[pomdp_id], tasks[pomdp_id], robot, random, horizon, gamma))
+			if isinstance(pomdp_task,ClientPOMDPPackage):
+				self.pomdp_tasks.append(HPOMDPPackage(pomdp_id, pomdp_task, pomdp_solvers[pomdp_id], tasks[pomdp_id], robot, random, horizon, gamma))
 
 			pomdp_id += 1
 
@@ -39,6 +42,7 @@ class AgentHPOMDP(AgentPOMDP):
 		self.tasks = tasks
 		self.robot = robot
 		self.gamma = gamma
+		self.extra_pomdp_solvers = None
 
 		self.name = "agent_hpomdp" 
 
@@ -135,9 +139,9 @@ class AgentHPOMDP(AgentPOMDP):
 class HPOMDP(ClientPOMDP):
 	metadata = {'render.modes': ['human']}
 
-	def __init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma, run_on_robot):
+	def __init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma):
 		ClientPOMDP.__init__(self, pomdp_task.task, pomdp_task.robot, pomdp_task.navigation_goals, pomdp_task.gamma, pomdp_task.random, \
-			pomdp_task.reset_random, pomdp_task.deterministic, pomdp_task.no_op, run_on_robot)
+			pomdp_task.reset_random, pomdp_task.deterministic, pomdp_task.no_op)
 
 		self.random = random
 		self.print_status = False
@@ -193,16 +197,24 @@ class HPOMDP(ClientPOMDP):
 class HPOMDPSimple(HPOMDP, ClientPOMDPSimple):
 	metadata = {'render.modes': ['human']}
 
-	def __init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma, run_on_robot):
-		HPOMDP.__init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma, run_on_robot)
+	def __init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma):
+		HPOMDP.__init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma)
 		ClientPOMDPSimple.__init__(self, pomdp_task.task, pomdp_task.robot, pomdp_task.navigation_goals, pomdp_task.gamma, pomdp_task.random, \
-			pomdp_task.reset_random, pomdp_task.deterministic, pomdp_task.no_op, run_on_robot)
+			pomdp_task.reset_random, pomdp_task.deterministic, pomdp_task.no_op)
 
 class HPOMDPComplex(HPOMDP, ClientPOMDPComplex):
 	metadata = {'render.modes': ['human']}
 
-	def __init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma, run_on_robot):
-		HPOMDP.__init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma, run_on_robot)
+	def __init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma):
+		HPOMDP.__init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma)
 		ClientPOMDPComplex.__init__(self, pomdp_task.task, pomdp_task.robot, pomdp_task.navigation_goals, pomdp_task.gamma, pomdp_task.random, \
-			pomdp_task.reset_random, pomdp_task.deterministic, pomdp_task.no_op, run_on_robot)
+			pomdp_task.reset_random, pomdp_task.deterministic, pomdp_task.no_op)
+
+class HPOMDPPackage(HPOMDP, ClientPOMDPPackage):
+	metadata = {'render.modes': ['human']}
+
+	def __init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma):
+		HPOMDP.__init__(self, pomdp_id, pomdp_task, pomdp_solver, task, robot, random, horizon, gamma)
+		ClientPOMDPPackage.__init__(self, pomdp_task.task, pomdp_task.robot, pomdp_task.navigation_goals, pomdp_task.gamma, pomdp_task.random, \
+			pomdp_task.reset_random, pomdp_task.deterministic, pomdp_task.no_op)
 

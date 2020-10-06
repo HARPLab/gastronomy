@@ -11,7 +11,7 @@ from pomdp_tasks_env import POMDPTasks
 from Qlearning import Q_learning
 import rl
 import pylab as plt
-import signal
+
 from draw_env import *
 
 robot = None
@@ -31,15 +31,12 @@ vrep = False
 # goals = [[0,0],[2,2],[0,2]]
 # goals = [[5,5],[2,7],[7,8],[3,2],[8,4],[6,1],[4,9],[1,4]]
 goals = [[2,8],[8,5],[2,2],[5,5],[8,8],[5,2],[2,5],[5,8],[8,2],[10,10],[0,0],[0,10],[10,0]]
+destination_cities = [0,1,2,3,4,5,6,7,8,9,10,11,12]
 ROS = False
 if vrep:
     from vrep_render import Vrep_Restaurant
 if ROS:
     import rospy
-
-def signal_handler(signal, frame):
-    print("\nprogram exiting gracefully")
-    sys.exit(0)
 
 def create_state_machines(time, table, robot):
     global state_num
@@ -176,12 +173,14 @@ def get_bill_SM(time, table, robot):
     return sm
 
 class Robot:
-    def __init__(self, restaurant):
+    def __init__(self, restaurant, package):
         self.tasks = list()
         self.mutex = threading.Lock()
         self.done = False
         self.restaurant = restaurant
         self.features = None
+        self.package = package
+        self.updated = False
 
         self.reset()
 
@@ -263,24 +262,30 @@ class Robot:
                 self.restaurant.render()
 
             
-    def reset(self, pos=None):
+    def reset(self):
         global reset_random
+        self.updated = True
         # if self.features == None:
         self.features = []
-        if pos is None:
-            # reset_random.randint(0,11)
-            # reset_random.randint(0,11)
-            
+        if self.package:
+            for i in range(0,self.restaurant.num_trucks):
+                self.features.append(Feature("x_"+str(i), "discrete", False, 0, self.restaurant.num_cities-1, 1, reset_random.randint(0,self.restaurant.num_cities), False))
+        else:
             self.features.append(Feature("x", "discrete", False, 0, 10, 1, reset_random.randint(0,11))) ## 10 by 10 grid
             self.features.append(Feature("y", "discrete", False, 0, 10, 1, reset_random.randint(0,11)))
-            # self.features.append(Feature("x", "discrete", False, 0, 10, 1, 3)) ## 10 by 10 grid
-            # self.features.append(Feature("y", "discrete", False, 0, 10, 1, 4))
-        else:
-            reset_random.randint(0,11)
-            reset_random.randint(0,11)
+            # self.features.append(Feature("x", "discrete", False, 0, 10, 1, 3)) ## 10 by 10 grid # was 3
+            # self.features.append(Feature("y", "discrete", False, 0, 10, 1, 4)) # was 4
+            # self.features.append(Feature("theta", "discrete", False, 0, 11, 1, random.randint(0,12))) # theta # * 30 degree
 
-            self.features.append(Feature("x", "discrete", False, 0, 10, 1, pos[0])) ## 10 by 10 grid
-            self.features.append(Feature("y", "discrete", False, 0, 10, 1, pos[1]))
+    def updates_features (self, name_value_dict):
+        # self.updated = True
+        for feature in self.features:
+            value = name_value_dict[feature.name]
+            feature.value = value
+
+    def print_features (self):
+        for feature in self.features:
+            print (feature.name, feature.value)
 
     def set(self, features):
         self.features = []
@@ -735,11 +740,12 @@ class History:
         print (str(self.id) + " " + str(self.state.number) + "," + str(self.time_passed))
 
 class Table:
-    def __init__(self, restaurant, id, robot, fake=False):
+    def __init__(self, restaurant, id, robot, package=False):
         global random
         self.num_humans = 0
         self.time = 0
-        self.fake = fake
+        self.package = package
+        self.fake = False
         self.restaurant = restaurant
         self.id = id
         self.start_time = time.time()
@@ -803,7 +809,7 @@ class Table:
     def reset_all (self):
         global random
         self.features = []
-        if not self.fake:
+        if not self.package:
             global goals
             # self.initialization_feature_range = (6, 9)
             # self.features.append(Feature("attention", "discrete", True, 0, MAX_TIME, 1, \
@@ -839,7 +845,6 @@ class Table:
             self.features.append(Feature("hand_raise", "discrete", False, 0, 1, 1, 0)) 
             ## just raised, half, late
             self.features.append(Feature("time_since_hand_raise", "discrete", False, 0, MAX_TIME-1, 1, 0))
-            self.features.append(Feature("food_picked_up", "discrete", False, 0, 1, 1, 0))
             # self.features.append(Feature("num_past_requests", "discrete", False, 0, 9, 1, 0))
 
             # no_req, want_menu, ready_to_order, want_food, want_water, want_bill, get_cards, want_cards_back, done_table
@@ -847,25 +852,10 @@ class Table:
             self.features.append(Feature("customer_satisfaction", "discrete", False, 0, 5, 1, 0, False))
             
         else:
+            self.goal_x = destination_cities[self.id]
             ## just started, half-ready, ready
-            self.features.append(Feature("cooking_status", "discrete", False, 0, 2, 1, 0))
-            ## ready-hot, ready-almost-hot, ready-cold
-            self.features.append(Feature("time_since_food_ready", "discrete", False, 0, MAX_TIME-1, 1, 0))
-            self.features.append(Feature("water", "discrete", False, 0, 2, 1, 0)) ## full, empty, half
-            ## served-full, served-half, served-empty
-            self.features.append(Feature("food", "discrete", False, 0, 2, 1, 0))
-
-            self.features.append(Feature("time_since_served", "discrete", False, 0, MAX_TIME-1, 1, 0))
-
-            self.features.append(Feature("hand_raise", "discrete", False, 0, 1, 1, 0)) 
-            ## just raised, half, late
-            self.features.append(Feature("time_since_hand_raise", "discrete", False, 0, MAX_TIME-1, 1, 0))
-            self.features.append(Feature("food_picked_up", "discrete", False, 0, 1, 1, 0))
-            # self.features.append(Feature("num_past_requests", "discrete", False, 0, 9, 1, 0))
-
-            # no_req, want_menu, ready_to_order, want_food, want_water, want_bill, get_cards, want_cards_back, done_table
-            self.features.append(Feature("current_request", "discrete", False, 0, 8, 1, 0))
-            self.features.append(Feature("customer_satisfaction", "discrete", False, 0, 5, 1, 0, False))
+            self.features.append(Feature("current_location", "discrete", False, 0, self.restaurant.num_cities+self.restaurant.num_trucks-1, 1, 0, False))
+            self.features.append(Feature("time", "discrete", False, 0, MAX_TIME-1, 1, 0, False))
 
     def reset (self):
         # self.get_feature("attention").set_value ( \
@@ -882,8 +872,8 @@ class Table:
         pass
 
 class Restaurant:
-    def __init__(self,seed,num_tables,horizon,greedy,simple,model,no_op,run_on_cobot,hybrid,deterministic,hybrid_3T,shani_baseline,hierarchical_baseline):
-        global random, MAX_TIME, global_time, vrep, VI, reset_random, goals
+    def __init__(self,seed,num_tables,horizon,greedy,simple,package,model,no_op,hybrid,deterministic,hybrid_3T,shani_baseline,hierarchical_baseline,folder):
+        global random, MAX_TIME, global_time, vrep, VI, reset_random
         if seed is not None and seed != -1:
             random = np.random.RandomState(seed)
             reset_random = np.random.RandomState(seed+10)
@@ -891,10 +881,6 @@ class Restaurant:
             random = np.random.RandomState()
             reset_random = np.random.RandomState()
             seed = None
-
-
-        if run_on_cobot:
-            goals = [[6,2],[6,6],[3,7]]
 
         if vrep:
             self.vrep_sim = Vrep_Restaurant()
@@ -905,11 +891,17 @@ class Restaurant:
 
         MAX_TIME = self.num_tables * 6
 
-        self.robot = Robot(self)
+        self.num_trucks = 1
+        self.num_cities = self.num_tables
+        self.package = package
+        if self.package:
+            MAX_TIME = max(10,self.num_tables * 3 + 1)
+
+        self.robot = Robot(self, self.package)
         self.robot_thread = threading.Thread(target=self.robot.run, daemon=True, args=())
         # self.dummy_table = Table(self, 10000, self.robot, fake=True)
         for t in range(self.num_tables):
-            table = Table(self, t, self.robot)
+            table = Table(self, t, self.robot, self.package)
             self.tables.append(table)
             self.threads.append(threading.Thread(target=table.run, daemon=True, args=()))
 
@@ -924,7 +916,7 @@ class Restaurant:
             "model: ", model, "no_op: ", no_op, "hybrid: ", hybrid, "deterministic: ",deterministic, "hybrid_3T: ", hybrid_3T, \
             "shani_baseline: ", shani_baseline, "hierarchical_baseline: ", hierarchical_baseline)
         envs = POMDPTasks(self, list(self.robot.tasks),self.robot, seed, random, reset_random, horizon, greedy, simple, model, \
-            no_op, run_on_cobot, hybrid, deterministic, hybrid_3T, shani_baseline, hierarchical_baseline)
+            no_op, hybrid, deterministic, hybrid_3T, shani_baseline, hierarchical_baseline, self.package, folder)
 
         # set_trace()
 
@@ -1012,35 +1004,39 @@ class Restaurant:
     def vrep_render (self):
         self.vrep_sim.render(self.robot, self.tables, self.done)
 
-def main():
+def main_func(inputs):
     # print command line arguments
     # set_trace()
-    signal.signal(signal.SIGINT, signal_handler)
     no_op = False
     hybrid = False
     deterministic = False
     hybrid_3T = False
     shani_baseline = False
     hierarchical_baseline = False
-    run_on_cobot = False
-    if "no_op" in str(sys.argv[6]):
+    package = False
+    if "no_op" in str(inputs[6]):
         no_op = True
-    if "hybrid" in str(sys.argv[6]):
+    if "hybrid" in str(inputs[6]):
         hybrid = True
-        if "hybrid_3T" in str(sys.argv[6]):
+        if "hybrid_3T" in str(inputs[6]):
             hybrid_3T = True
-    if "deterministic" in str(sys.argv[6]):
+    if "deterministic" in str(inputs[6]):
         deterministic = True
-    if "shani" in str(sys.argv[6]):
+    if "shani" in str(inputs[6]):
         shani_baseline = True
-    if "H_POMDP" in str(sys.argv[6]):
+    if "H_POMDP" in str(inputs[6]):
         hierarchical_baseline = True
-    if len(sys.argv) > 7 and ("robot" in str(sys.argv[7])):
-        run_on_cobot = True
+    if "package" in str(inputs[6]):
+        package = True
 
-    rst = Restaurant(seed=int(sys.argv[1]),num_tables=int(sys.argv[2]),horizon=int(sys.argv[3]),greedy=bool(sys.argv[4] == "True")\
-        ,simple=bool(sys.argv[5] == "True"), model=str(sys.argv[6]), no_op=no_op, run_on_cobot=run_on_cobot, hybrid=hybrid, deterministic=deterministic\
-        , hybrid_3T=hybrid_3T, shani_baseline=shani_baseline, hierarchical_baseline=hierarchical_baseline)
+    folder = str(inputs[7])
+
+    rst = Restaurant(seed=int(inputs[1]),num_tables=int(inputs[2]),horizon=int(inputs[3]),greedy=bool(inputs[4] == "True")\
+        ,simple=bool(inputs[5] == "True"), package=package, model=str(inputs[6]), no_op=no_op, hybrid=hybrid, deterministic=deterministic\
+        , hybrid_3T=hybrid_3T, shani_baseline=shani_baseline, hierarchical_baseline=hierarchical_baseline, folder=folder)
+
+# def main():
+#     main_func(sys.argv)
 
 if __name__ == "__main__":
-    main()
+    main_func(sys.argv)

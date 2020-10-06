@@ -13,6 +13,7 @@ def drawTables_beliefs(coords, tables, pomdp_tasks, actions, pomdp_solvers, fina
 	lw=2
 	c = [0,0,0]
 	sat_colors = [[0.2, 0.3, 0.7], [0.9, 0.6, 0.32], [1,0,0],[0.2, 0.6, 0.7],[0.7, 0.1, 0.5], \
+					[0.2, 0.3, 0.7], [0.9, 0.6, 0.32], [1,0,0],[0.2, 0.6, 0.7],[0.7, 0.1, 0.5], \
 					[0.2, 0.4, 0.7], [0.9, 0.7, 0.32], [1,0.1,0],[0.2, 0.7, 0.7],[0.7, 0.2, 0.5]]
 
 	# fig = plt.gcf()
@@ -142,15 +143,14 @@ def drawTasks_beliefs(tasks):
 
 
 
-def drawTables(coords, tables, pomdp_tasks, pomdp_solvers, actions, final_rew):
+def drawTables(coords, tables, pomdp_tasks, pomdp_solvers, actions, final_rew, final_horizon):
 	lw=2
 	c = [0,0,0]
 	tables_color = [[0.2, 0.3, 0.7], [0.9, 0.6, 0.32], [1,0,0],[0.2, 0.6, 0.7],[0.7, 0.1, 0.5], \
-					[0.2, 0.4, 0.7], [0.9, 0.7, 0.32], [1,0.1,0],[0.2, 0.7, 0.7],[0.7, 0.2, 0.5], \
-					[0.2, 0.3, 0.7], [0.9, 0.6, 0.32], [1,0,0],[0.2, 0.6, 0.7],[0.7, 0.1, 0.5]]
+					[0.2, 0.3, 0.7], [0.9, 0.6, 0.32], [1,0,0],[0.2, 0.6, 0.7],[0.7, 0.1, 0.5], \
+					[0.2, 0.4, 0.7], [0.9, 0.7, 0.32], [1,0.1,0],[0.2, 0.7, 0.7],[0.7, 0.2, 0.5]]
 
 	colors = []
-
 	fig, ax = plt.subplots()
 
 	xs = [coords[0], coords[1], coords[1], coords[0], coords[0]]
@@ -160,7 +160,6 @@ def drawTables(coords, tables, pomdp_tasks, pomdp_solvers, actions, final_rew):
 
 	ax.set_xticks([])
 	ax.set_yticks([])
-
 
 	ax.spines['bottom'].set_color(None)
 	ax.spines['top'].set_color(None) 
@@ -203,20 +202,7 @@ def drawTables(coords, tables, pomdp_tasks, pomdp_solvers, actions, final_rew):
 
 		count += 1
 
-	##################### KITCHEN
-	if pomdp_tasks[0].KITCHEN:
-		x = pomdp_tasks[0].kitchen_pos[0] - margin
-		y = pomdp_tasks[0].kitchen_pos[1] - margin
-		rect = Circle((x+margin,y+margin), .5)
-
-		label = ax.annotate("K", xy=(pomdp_tasks[0].kitchen_pos[0],pomdp_tasks[0].kitchen_pos[1] - text_margin), fontsize=18, ha="center")
-
-		rect.set_facecolor([0,0,0])
-		colors.append([0,0,0])
-		patches.append(rect)
-
-	############################################# KITCHEN
-
+	
 	# patches.append(rect)
 
 	p = PatchCollection(patches, alpha=0.3, facecolor=colors)
@@ -240,12 +226,12 @@ def drawTables(coords, tables, pomdp_tasks, pomdp_solvers, actions, final_rew):
 		for p in solver_prob:
 			st = task.get_state_tuple(p[1])			
 			time_steps = str(st[task.feature_indices['time_since_hand_raise']])
-			time_food_ready = str(st[task.feature_indices['time_since_food_ready']])
 			hand_raise = st[task.feature_indices['hand_raise']]
-			cooking_status = st[task.feature_indices['cooking_status']]
 			sat = st[task.feature_indices['customer_satisfaction']]
-			req = st[task.feature_indices['current_request']]
 			sats[sat,1] = round(p[0],2)
+			time_food_ready = str(st[task.feature_indices['time_since_food_ready']])
+			cooking_status = st[task.feature_indices['cooking_status']]
+			req = st[task.feature_indices['current_request']]
 
 			if req == 3:
 				if cooking_status == 2: # + str(time_food_ready)
@@ -262,11 +248,7 @@ def drawTables(coords, tables, pomdp_tasks, pomdp_solvers, actions, final_rew):
 					label = ax.annotate("cooked", xy=(x-0.2,y+1.17), fontsize=22, ha="center")
 					if hand_raise == 1:
 						label = ax.annotate("t=" + str(0), xy=(x,y+2), fontsize=22, ha="center")
-
-				# if hand_raise == 1:
-				# 	label = ax.annotate("t=" + str(time_steps), xy=(x,y+2), fontsize=22, ha="center")
-
-			else:
+			else:				
 				if hand_raise == 1:
 					label = ax.annotate("t=" + str(time_steps), xy=(x,y+1.17), fontsize=22, ha="center")
 			
@@ -313,29 +295,20 @@ def drawTables(coords, tables, pomdp_tasks, pomdp_solvers, actions, final_rew):
 		# ax2.set_axes_locator(ip)
 		# Mark the region corresponding to the inset axes on ax1 and draw lines
 		# in grey linking the two axes.
-		if len(pomdp_tasks) == 5:
-			margin = 2
-			if count == 0:
-				ax2 = ax.inset_axes([(x-0.5)/10.0,(y-2.3)/10.0,0.15,0.15])
-			if count == 1:
-				ax2 = ax.inset_axes([(x-1.2)/10.0,(y-margin)/10.0,0.15,0.15])
-			if count == 2:
-				ax2 = ax.inset_axes([(x+0.8)/10.0,(y-0.65)/10.0,0.15,0.15])
-			if count == 3:
-				ax2 = ax.inset_axes([(x-0.7)/10.0,(y-margin)/10.0,0.15,0.15])
-			if count == 4:
-				ax2 = ax.inset_axes([(x-3.7)/10.0,(y-.5)/10.0,0.15,0.15])
-
-		elif len(pomdp_tasks) == 3:
-			margin = 2
-			if count == 0:
-				ax2 = ax.inset_axes([(x+1.1)/10.0,(y-0.75)/10.0,0.15,0.15])
-			if count == 1:
-				ax2 = ax.inset_axes([(x+1.1)/10.0,(y-0.65)/10.0,0.15,0.15])
-			if count == 2:
-				ax2 = ax.inset_axes([(x-0.5)/10.0,(y-2.3)/10.0,0.15,0.15])
+		
+		margin = 2
+		if count == 0:
+			ax2 = ax.inset_axes([(x-0.5)/10.0,(y-2.3)/10.0,0.15,0.15])
+		elif count == 1:
+			ax2 = ax.inset_axes([(x-1.2)/10.0,(y-margin)/10.0,0.15,0.15])
+		elif count == 2:
+			ax2 = ax.inset_axes([(x+0.8)/10.0,(y-0.65)/10.0,0.15,0.15])
+		elif count == 3:
+			ax2 = ax.inset_axes([(x-0.7)/10.0,(y-margin)/10.0,0.15,0.15])
+		elif count == 4:
+			ax2 = ax.inset_axes([(x-3.7)/10.0,(y-.5)/10.0,0.15,0.15])
 		else:
-			ax2 = ax.inset_axes([(x)/10.0,(y)/10.0,0.15,0.15])
+			ax2 = ax.inset_axes([(x-0.5)/10.0,(y-2.3)/10.0,0.15,0.15])
 
 		ax2.bar(sats[:,0],sats[:,1], align='center', alpha=1.0, color=tables_color[count])		
 		ax2.set_xticks(np.arange(0,6))
@@ -343,11 +316,14 @@ def drawTables(coords, tables, pomdp_tasks, pomdp_solvers, actions, final_rew):
 		ax2.set_ylim((0,1))
 		count += 1
 	
+	if final_rew is not None and final_horizon is not None:
+		label = ax.annotate("r: " + str(np.round(final_rew,2)) + " h: " + str(final_horizon), xy=(5,10.5), fontsize=26, ha="center")
+
 	label = ax.annotate("a" + actions.replace('- ', ''), xy=(5,9.7), fontsize=26, ha="center")
 
 
 
-def drawRobot(tables, pomdp_tasks, robot, r):
+def drawRobot(tables, robot, r):
 	an = np.linspace(0, 2 * np.pi, 100)
 	patches = []
 	ax = plt.gca()
@@ -355,48 +331,27 @@ def drawRobot(tables, pomdp_tasks, robot, r):
 	c = [[0.5, 0.45, 0.5] for i in range(4)]
 	x = robot.get_feature("x").value
 	y = robot.get_feature("y").value
-
-	# print ("X: ", x, "Y: ", y)
-	# set_trace()
-
 	img = mpimg.imread('robot.png')
 
 	# ax = ax.inset_axes()
 	count = 0
-	found = False
 	for table in range(len(tables)):
 		goal_x = tables[table].goal_x
 		goal_y = tables[table].goal_y
-		if pomdp_tasks[0].KITCHEN:
-			if goal_x == x and goal_y == y:
-				if count == 0:
-					x += -1.7; y += -1.0;
-				if count == 1:
-					x += -2; y += -1.1;
-				if count == 2:
-					x += -1.6; y += -1.6;
-				if count == 3:
-					x += -1.7; y += -1.1;
-				if count == 4:
-					x += -1.9; y += -1.4;
-				break
-		else:
-			if goal_x == x and goal_y == y:
-				if count == 0:
-					x += -1.5; y += -1.4;
-				if count == 1:
-					x += -2; y += -1.1;
-				if count == 2:
-					x += -1.3; y += -0.8;
-				if count == 3:
-					x += -1.7; y += -1.1;
-				if count == 4:
-					x += -1.9; y += -1.4;
-				break
+		if goal_x == x and goal_y == y:
+			if count == 0:
+				x += -1.5; y += -1.4;
+			if count == 1:
+				x += -2; y += -1.1;
+			if count == 2:
+				x += -1.3; y += -0.8;
+			if count == 3:
+				x += -1.7; y += -1.1;
+			if count == 4:
+				x += -1.9; y += -1.4;
+			break
 		count += 1
 
-	if pomdp_tasks[0].KITCHEN and pomdp_tasks[0].kitchen_pos[0] == x and pomdp_tasks[0].kitchen_pos[1] == y:
-		x += -1.5; y += -1.5;
 
 	ax2 = ax.inset_axes([(x)/10.0,(y)/10.0,0.15,0.15])
 	ax2.patch.set_alpha(0)
