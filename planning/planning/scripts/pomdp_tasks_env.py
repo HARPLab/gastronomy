@@ -133,7 +133,7 @@ class POMDPTasks():
 				self.horizon = 2
 				multi_ind_pomdp_solver.cashing = False
 			elif folder == "belief_mix":
-				self.test_folder += 'tests_belief_mix_nobug/'
+				self.test_folder += 'tests_belief_mix/'
 				self.hybrid_3T = False
 				self.three_tables = True
 				self.LB_UB = True
@@ -141,7 +141,7 @@ class POMDPTasks():
 				self.horizon = 2
 				multi_ind_pomdp_solver.cashing = True
 			elif folder == "nocash_mix":
-				self.test_folder += 'tests_nocash_mix_nobug/'
+				self.test_folder += 'tests_nocash_mix/'
 				self.hybrid_3T = False
 				self.three_tables = True
 				self.LB_UB = True
