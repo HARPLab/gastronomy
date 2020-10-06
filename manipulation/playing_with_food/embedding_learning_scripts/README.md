@@ -38,4 +38,4 @@ Need to enter CL argument specifying the filepath containing the thresholds for 
 Need to enter command line argument specifying location of the labels for audio data - these labels are vectors of PCA features from the raw audio data. Labels stored in the file are arrays of size num_samplesx6 PCs. The file used here is "audio_PCA_feature_labels_9.pkl", located in the data folder.
 
 3) -saved_checkpoint 
-Need to enter command line argument specifying location of the saved learned embedding model. Current checkpoint is checkpoint4.pth.tar located in checkpoints folder here.
+Need to enter command line argument specifying location of the saved learned embedding model. Current checkpoint is checkpoint4.pth.tar located in checkpoints folder here: https://drive.google.com/drive/folders/1MrqZX7fzzkEew_aH1TgZBIyAwfXVrBK1?usp=sharing
