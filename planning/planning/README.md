@@ -13,4 +13,4 @@ Python3
 3. Create a virtualenv: `python3 -m virtualenv env`
 4. Activate the virtualenv: `source env/bin/activate`
 5. Install numpy, gym, matplotlib and ipdb packages through pip install: `pip install -r requirements.txt`
-6. Run `python ./scripts/State_Machine.py`  
+6. Run `python3 State_Machine.py 90 5 4 True False complex_no_op_hybrid_avg belief_mix`  
