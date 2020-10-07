@@ -1,0 +1,12 @@
+pan:
+  urdf_path: 001_small_pan/001_small_pan.urdf
+  asset_options:
+    max_linear_velocity: 10.0
+    max_angular_velocity: 40.0
+    fix_base_link: True
+  shape_props:
+    restitution: 0.3
+    friction: 1
+    rolling_friction: 0.1
+    torsion_friction: 0.1
+    thickness: 1e-3

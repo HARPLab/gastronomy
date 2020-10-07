@@ -1,0 +1,81 @@
+<robot name="block">
+  
+  <link name="block1">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.14032825150137723 0.05 0.05"/>
+      </geometry>
+      <material name="dark_yellow">
+        <color rgba="0.5 0.5 0.1 1"/>
+      </material>
+    </visual> 
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.14032825150137723 0.05 0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.25056083322688416"/>
+      <inertia ixx="0.00010440034717786842" ixy="0" ixz="0" iyy="0.0004633708802932901" iyz="0" izz="0.0004633708802932901"/>
+    </inertial>
+  </link>
+
+  <link name="block2">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.006826719015776104 0.05 0.05"/>
+      </geometry>
+      <material name="dark_yellow">
+        <color rgba="0.5 0.5 0.1 1"/>
+      </material>
+    </visual> 
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.006826719015776104 0.05 0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.270130340348102"/>
+      <inertia ixx="0.0005292209751450426" ixy="0" ixz="0" iyy="0.0002695432602303961" iyz="0" izz="0.0002695432602303961"/>
+    </inertial>
+  </link>
+
+  <link name="block3">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.0028450294828466583 0.05 0.05"/>
+      </geometry>
+      <material name="dark_yellow">
+        <color rgba="0.5 0.5 0.1 1"/>
+      </material>
+    </visual> 
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.0028450294828466583 0.05 0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.25056083322688416"/>
+      <inertia ixx="0.00010440034717786842" ixy="0" ixz="0" iyy="5.236918089575174e-05" iyz="0" izz="5.236918089575174e-05"/>
+    </inertial>
+  </link>
+
+  <joint name="block_link1" type="fixed">
+    <parent link="block1"/>
+    <child link="block2"/>
+    <origin xyz="0.07357748525857667 0.0 0.0"/>
+  </joint>
+
+  <joint name="block_link2" type="fixed">
+    <parent link="block2"/>
+    <child link="block3"/>
+    <origin xyz="0.004835874249311381 0.0 0.0"/>
+  </joint>
+
+</robot>

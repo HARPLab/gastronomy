@@ -1,0 +1,80 @@
+local_assets_path: /home/klz/Documents/franka-block-env/assets
+
+scene:
+  n_envs: 20
+  es: 1
+  gui: 1
+  gym:
+    dt: 0.01
+    substeps: 2
+    flex:
+      solver_type: 5
+      num_outer_iterations: 4
+      num_inner_iterations: 15
+      relaxation: 0.75
+      warm_start: 0.8
+      shape_collision_margin: 1e-3
+      contact_regularization: 1e-7
+      deterministic_mode: True
+
+block:
+  urdf_path: block.urdf
+  asset_options:
+    max_linear_velocity: 10.0
+    max_angular_velocity: 40.0
+  shape_props:
+    restitution: 0.3
+    friction: 0.5
+    rolling_friction: 1
+    torsion_friction: 0
+    thickness: 1e-3
+
+franka: 
+  urdf_path: franka_description/robots/franka_panda_dynamics_with_spatula.urdf
+  asset_options:
+    fix_base_link: True
+    flip_visual_attachments: True
+    armature: 0.01
+    max_linear_velocity: 100.0
+    max_angular_velocity: 40.0
+    disable_gravity: True
+  attractor_props:
+    stiffness: 1e3
+    damping: 2.5e2
+  shape_props:
+    friction: 0.5
+    rolling_friction: 0.1
+    torsion_friction: 0.1
+    thickness: 1e-3
+  dof_props:
+    stiffness: [2e3, 2e3, 2e3, 2e3, 2e3, 2e3, 2e3, 8e2, 8e2]
+    damping: [2e2, 2e2, 2e2, 2e2, 2e2, 2e2, 2e2, 10, 10]
+    effort: [87, 87, 87, 87, 12, 12, 12, 100, 100]
+    
+table:
+  dims:
+    width: 1
+    height: 0.5
+    depth: 1
+  shape_props:
+    restitution: 0.3
+    friction: 0.1
+    rolling_friction: 0
+    torsion_friction: 0
+    thickness: 5e-3
+  asset_options:
+    fix_base_link: True
+
+pan:
+  use_pan: False
+  urdf_path: pans/003_cast_iron_skillet/003_cast_iron_skillet.urdf
+  asset_options:
+    max_linear_velocity: 10.0
+    max_angular_velocity: 40.0
+    fix_base_link: True
+  shape_props:
+    restitution: 0.3
+    friction: 1
+    rolling_friction: 0.1
+    torsion_friction: 0.1
+    thickness: 1e-3

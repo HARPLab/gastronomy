@@ -1,0 +1,81 @@
+<robot name="block">
+  
+  <link name="block1">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.03230311406559779 0.069134547660847 0.08109566806125405"/>
+      </geometry>
+      <material name="dark_yellow">
+        <color rgba="0.5 0.5 0.1 1"/>
+      </material>
+    </visual> 
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.03230311406559779 0.069134547660847 0.08109566806125405"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.0588294411133744"/>
+      <inertia ixx="5.5672717322267007e-05" ixy="0" ixz="0" iyy="3.735668803096856e-05" iyz="0" izz="2.8547363095996083e-05"/>
+    </inertial>
+  </link>
+
+  <link name="block2">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.010214584043973157 0.03304929645171396 0.05924225348491759"/>
+      </geometry>
+      <material name="dark_yellow">
+        <color rgba="0.5 0.5 0.1 1"/>
+      </material>
+    </visual> 
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.010214584043973157 0.03304929645171396 0.05924225348491759"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.7188775072182407"/>
+      <inertia ixx="0.001042667001272966" ixy="0" ixz="0" iyy="0.0008188312712807442" iyz="0" izz="0.00027111597992804636"/>
+    </inertial>
+  </link>
+
+  <link name="block3">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.03230311406559779 0.069134547660847 0.08109566806125405"/>
+      </geometry>
+      <material name="dark_yellow">
+        <color rgba="0.5 0.5 0.1 1"/>
+      </material>
+    </visual> 
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.03230311406559779 0.069134547660847 0.08109566806125405"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.4864252503040718"/>
+      <inertia ixx="0.0004603242007076454" ixy="0" ixz="0" iyy="0.00030887997543569936" iyz="0" izz="0.00023604096820723"/>
+    </inertial>
+  </link>
+
+  <joint name="block_link1" type="fixed">
+    <parent link="block1"/>
+    <child link="block2"/>
+    <origin xyz="0.021258849054785475 0.0 0.0"/>
+  </joint>
+
+  <joint name="block_link2" type="fixed">
+    <parent link="block2"/>
+    <child link="block3"/>
+    <origin xyz="0.021258849054785475 0.0 0.0"/>
+  </joint>
+
+</robot>

@@ -6,6 +6,14 @@ The manipulation repository consists of 7 packages.
 
 The Franka-Interface package in the franka-interface folder and the FrankaPy package in the frankapy folder were created by the Intelligent Manipulation Lab to control the Franka Panda Research Robot at 1kHz. Installation instructions are located in the README.md file in the each folder. 
 
+## Playing with Food
+
+This folder contains the scripts we used to collect the data for our ISER 2020 Abstract. In addition, it contains the scripts we used to train our preliminary food embeddings and a link to the Google Drive containing all of our collected data.
+
+## Contingency Planning
+
+This folder contains all the scripts for a work-in-progress ICRA paper on generating parameters for skills when a previous executed skill may have failed. It depends on Nvidia's isaac gym simulator and a python wrapper library called carbongym-utils.
+
 ## DMP
 
 The DMP package in the dmp folder was created by the Intelligent Manipulation Lab to train new dmp skills using trajectories recorded by the robot-interface package above.

@@ -1,0 +1,9 @@
+urdf:
+  asset_options:
+    max_linear_velocity: 10.0
+    max_angular_velocity: 40.0
+  shape_props:
+    friction: 1
+    rolling_friction: 1.0
+    torsion_friction: 1.0
+    thickness: 2e-3

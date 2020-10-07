@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<robot name="004_cast_iron_pan">
+  <link name="004_cast_iron_pan">
+    <visual>
+      <origin xyz="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="004_cast_iron_pan/004_cast_iron_pan_visual.obj" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="004_cast_iron_pan/004_cast_iron_pan_collision.obj" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+  </link>
+</robot>
