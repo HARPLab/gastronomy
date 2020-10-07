@@ -1,0 +1,391 @@
+feat_init = ""
+view_init = ""
+flow_init = ""
+emb2D_init = ""
+vis_init = ""
+occ_init = ""
+ego_init = ""
+tow_init = ""
+preocc_init = ""
+quant_init = ""
+pixor_init = ""
+
+# emb_dim = 8
+# # occ_cheap = False
+# feat_dim = 32
+# feat_do_vae = False
+
+# view_depth = 32
+# view_pred_rgb = True
+# view_use_halftanh = True
+# view_pred_embs = False
+
+# occ_do_cheap = False
+# this is the previous winner net, from which i was able to train a great flownet in 500i
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bgt_bgv_trainer_rgb_gt"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bgt_bgv_trainer_rgb_gt"
+# occ_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bgt_bgv_trainer_rgb_gt"
+
+
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bgt_bgv_trainer_rgb_occ_gt"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bgt_bgv_trainer_rgb_occ_gt"
+occ_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bgt_bgv_trainer_rgb_occ_gt"
+
+
+
+# feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_E3_s.01_m1_e.1_n2_d16_bgt_bgv_trainer_rgb_occ_emb3d_gt"
+# view_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_E3_s.01_m1_e.1_n2_d16_act_acv_trainer_rgb_occ_emb3d_gt"
+# occ_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_E3_s.01_m1_e.1_n2_d16_act_acv_trainer_rgb_occ_emb3d_gt"
+
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_E3_s.01_m1_e.1_n2_d16_cgt_cgv_trainer_rgb_occ_emb3d_big"
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bgt_bgv_trainer_rgb_gt"
+# view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bgt_bgv_trainer_rgb_gt"
+
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_cgt_cgv_trainer_rgb_big"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_cgt_cgv_trainer_rgb_big"
+
+
+# feat_init = "02_m144x144x144_1e-3_F32_cgt_trainer_emb_moc_o_big"
+# feat_init = "02_m144x144x144_1e-4_F32_di_Ft_trainer_big_builder_hard_exp5_pret_moc"
+
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_det_trainer_emb_moc_o_rgb_occ_emb2d_pret"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_det_trainer_emb_moc_o_rgb_occ_emb2d_pret"
+occ_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_det_trainer_emb_moc_o_rgb_occ_emb2d_pret"
+
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_ag_lt_ns_trainer_rgb_occ_multiple_clevr_orient2"
+occ_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_ag_lt_ns_trainer_rgb_occ_multiple_clevr_orient2"
+
+# feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_ag_lt_ns_trainer_rgb_occ_multiple_clevr_orient2"
+# #" quant_init = ""
+
+
+
+
+feat_init = "02_m144x144x144_1e-4_F32_be_lt_ns_trainer_big_builder_hard_exp5_pret_moc_orient"
+
+
+pixor_init = "02_m144x144x144_1e-3_F32f_cgt_ns_det_trainer_px_big_freeze_vq_rotate"
+det_init = "02_m144x144x144_1e-3_F32f_cgt_ns_det_trainer_big_freeze_vq_rotate"
+
+
+feat_init = "02_m144x144x144_1e-4_F32_be_lt_ns_trainer_big_builder_hard_exp5_pret_moc_orient"
+
+
+
+
+
+
+
+
+# quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_trainer_quantize_object_no_detach_rotate"
+
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_trainer_quantize_object_no_detach_rotate"
+feat_init = "02_m144x144x144_1e-3_F32f_cgt_ns_det_trainer_big_freeze_vq_rotate_deep_det"
+
+feat_init = "02_m144x144x144_1e-3_F32f_cgt_ns_det_trainer_big_freeze_vq_rotate"
+
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_trainer_quantize_object_no_detach"
+
+
+
+
+# single object detector
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_trainer_quantize_object_no_detach_rotate"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_trainer_quantize_object_no_detach_rotate"
+det_init = "02_m144x144x144_1e-3_F32f_cgt_ns_det_trainer_big_freeze_vq_rotate_deep_det"
+
+
+
+
+
+
+
+
+
+# hardmined carla
+feat_init = "02_m144x144x144_1e-4_F32_bbt_ns_orient_lowres"
+
+
+
+
+
+
+
+
+# hard mined carla
+feat_init = "02_m144x144x144_1e-4_F32_bbt_ns_carla_trainer_big_builder_hard_exp5_pret_low_res"
+
+# hard mined clevr
+feat_init = '02_m144x144x144_1e-4_F32_be_lt_ns_clevr_multiple_trainer_hard_exp5_pret_orient'
+
+
+# carla only occ
+feat_init = "02_m144x144x144_1e-3_F32_Oc_c1_s1_bbt_ns_carla_trainer_occ"
+
+# clevr only occ
+feat_init = '02_m144x144x144_1e-3_F32_Oc_c1_s1_be_lt_ns_trainer_occ_multiple'
+
+
+
+
+
+
+
+
+
+
+
+# vqvae best model for carla 100 means
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_gt'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_gt'
+
+#clevr single object vqvae 41 means
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_trainer_quantize_object_no_detach_rotate"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_trainer_quantize_object_no_detach_rotate"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_trainer_quantize_object_no_detach_rotate"
+
+
+
+#clevr single object vqvae 100 means
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_ns_clevr_trainer_quantize_object_no_detach_rotate_100"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_ns_clevr_trainer_quantize_object_no_detach_rotate_100"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_rgt_ns_clevr_trainer_quantize_object_no_detach_rotate_100"
+
+# clevr big dataset rgb occ
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_cgt_cgv_trainer_rgb_occ_big"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_cgt_cgv_trainer_rgb_occ_big"
+occ_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_cgt_cgv_trainer_rgb_occ_big"
+
+
+
+
+# carla muco
+feat_init = '02_m144x144x144_1e-3_F32_bbt_ns_carla_trainer_rgb_occ_orient_low_res_viewContrast_moc'
+
+
+
+
+
+# rgb occ carla muco detector
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bbt_ns_carla_trainer_rgb_occ_orient_low_res"
+det_init = "02_m144x144x144_1e-3_F32f_fct_ns_carla_det_trainer_big_freeze_vq_rotate_deep_det_pret_rgb_occ"
+
+# clevr multiple object detector
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+det_init = "02_m144x144x144_1e-3_F32f_ag_lt_ns_det_trainer_big_freeze_vq_rotate_deep_det_multiple"
+
+
+
+
+
+
+# clevr multiple vq rgb 100 means
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+
+
+#bigbird rgb view pred
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_ggt_ns_bigbird_trainer_rgb_orient"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_ggt_ns_bigbird_trainer_rgb_orient"
+
+# bigbird viewpred occ
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_eet_ns_bigbird_trainer_rgb_occ_multiple_orient"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_eet_ns_bigbird_trainer_rgb_occ_multiple_orient"
+occ_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_eet_ns_bigbird_trainer_rgb_occ_multiple_orient"
+
+
+
+# carla vq rgb 100
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_gt"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_gt"
+occ_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_gt"
+det_init = "02_m144x144x144_1e-3_F32f_bb_tv_at_ns_carla_det_trainer_big_freeze_vq_rotate_deep_det_2"
+
+
+
+
+# hard mined carla muco detector 2d detector
+feat_init = "02_m144x144x144_1e-4_F32_bbt_ns_orient_lowres"
+det_init = "02_m144x144x144_1e-3_F32f_bb_tv_at_ns_carla_det_trainer_big_freeze_vq_rotate_deep_det_from2d"
+quant_init = '02_m144x144x144_1e-4_F32f_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_init_examples_hard_only_embed_frozen'
+
+
+
+
+
+
+
+
+
+
+# bigbird muco hpm
+feat_init = '02_m144x144x144_1e-4_F32_ggt_ns_bigbird_trainer_big_builder_hard_exp5_pret_moc_orient_low_res2'
+
+
+
+# hard mined carla muco detector
+feat_init = "02_m144x144x144_1e-4_F32_bbt_ns_orient_lowres"
+det_init = "02_m144x144x144_1e-3_F32f_bb_tv_at_ns_carla_det_trainer_big_freeze_vq_rotate_deep_det_1_old"
+quant_init = '02_m144x144x144_1e-4_F32f_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_init_examples_hard_only_embed_frozen'
+
+
+
+# bigbird muco viweContrast
+feat_init = "02_m144x144x144_1e-3_F32_E3_s.01_m1_e.1_n2_d16_be_lt_ns_clevr_trainer_rgb_occ_multiple_clevr_orient_viewContrast_t"
+
+# bigbird viewpred occ
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_eet_ns_bigbird_trainer_rgb_occ_multiple_orient"
+
+# clevr only rgb
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_rgb_multiple'
+
+# carla only rgb
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_rgb_orient'
+
+# carla view contrast
+feat_init ='02_m144x144x144_1e-3_F32_E3_s.01_m1_e.1_n2_d16_be_lt_ns_clevr_trainer_rgb_occ_multiple_clevr_orient_viewContrast_t'
+
+# clevr view contrast
+feat_init = '02_m144x144x144_1e-3_F32_be_lt_ns_clevr_trainer_rgb_occ_multiple_clevr_orient_viewContrast_moc'
+
+
+# hard mined carla muco
+feat_init = "02_m144x144x144_1e-4_F32_bbt_ns_orient_lowres"
+
+# bigbird muco hpm
+feat_init = "02_m144x144x144_1e-4_F32_ggt_ns_bigbird_trainer_big_builder_hard_exp5_pret_moc_orient_low_res2"
+
+
+
+
+
+
+
+
+# replica rgb occ
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_aat_ns_replica_multiview_trainer'
+occ_init = '02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_aat_ns_replica_multiview_trainer'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_aat_ns_replica_multiview_trainer'
+
+# clevr multiple object detector improved version from 2d
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+det_init = '02_m144x144x144_1e-3_F32f_ag_lt_ns_det_trainer_big_freeze_vq_rotate_deep_det_multiple_from2d_fixed'
+
+# clevr multiple viewpred occ
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_ag_lt_ns_trainer_rgb_occ_multiple_clevr_orient2"
+occ_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_ag_lt_ns_trainer_rgb_occ_multiple_clevr_orient2"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_ag_lt_ns_trainer_rgb_occ_multiple_clevr_orient2"
+
+
+# hard mined clevr muco
+feat_init = "02_m144x144x144_1e-4_F32_be_lt_ns_clevr_multiple_trainer_hard_exp5_pret_moc_orient"
+
+
+
+# replica best for parsing
+feat_init = '02_m144x144x144_1e-4_F32f_cct_ns_replica_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_frozen'
+quant_init = '02_m144x144x144_1e-4_F32f_cct_ns_replica_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_frozen'
+
+# replica hard mine
+feat_init = '02_m144x144x144_1e-4_F32_cct_ns_replica_trainer_hard_exp5_pret_moc_orient'
+det_init =  '02_m144x144x144_1e-3_F32f_cct_ns_replica_det_trainer_freeze_vq_rotate_deep_det'
+
+# clevr multiple object detector improved version
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+det_init = '02_m144x144x144_1e-3_F32f_ag_lt_ns_det_trainer_big_freeze_vq_rotate_deep_det_multiple_normal'
+
+
+# clevr hardmine moc 2d boxes continual
+feat_init = "02_m144x144x144_1e-4_F32_be_lt_ns_clevr_multiple_trainer_hard_exp5_pret_moc_orient_detboxes"
+quant_init = '02_m144x144x144_1e-4_F32f_be_lt_ns_clevr_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_2dboxes_frozen_continual'
+#iteration 1
+feat_init = '02_m144x144x144_1e-4_F32_be_lt_ns_clevr_multiple_trainer_hard_exp5_pret_moc_orient_2dboxes'
+quant_init = '02_m144x144x144_1e-4_F32f_be_lt_ns_clevr_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_2dboxes_frozen_continual_fixed'
+det_init = '02_m144x144x144_1e-4_F32f_be_lt_ns_clevr_trainer_freeze_vq_rotate_selfimproveIterate_deep_multiple_maskout_hardneg_continual_3'
+#iteration 2
+quant_init = '02_m144x144x144_1e-4_F32f_be_lt_ns_clevr_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_detboxes_frozen_continual'
+
+
+# =======
+# replica best for parsing
+feat_init = '02_m144x144x144_1e-4_F32f_cct_ns_replica_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_frozen'
+quant_init = '02_m144x144x144_1e-4_F32f_cct_ns_replica_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_frozen'
+
+# carla best embeddings for scene parsing
+feat_init = "02_m144x144x144_1e-4_F32f_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_40_init_examples_hard_only_embed_frozen"
+quant_init = "02_m144x144x144_1e-4_F32f_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_40_init_examples_hard_only_embed_frozen"
+
+# replica vqvae viewpred
+feat_init =  '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_cct_ns_replica_trainer_quantize_object_no_detach_rotate'
+quant_init =  '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_cct_ns_replica_trainer_quantize_object_no_detach_rotate'
+view_init =  '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_cct_ns_replica_trainer_quantize_object_no_detach_rotate'
+
+# clevr best embeddings for scene parsing
+feat_init = "02_m144x144x144_1e-4_F32f_be_lt_ns_clevr_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_frozen"
+quant_init = "02_m144x144x144_1e-4_F32f_be_lt_ns_clevr_trainer_quantize_object_no_detach_rotate_50_init_examples_hard_only_embed_frozen"
+
+
+
+
+# clevr vqvae viewpred
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+quant_init = "02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_be_lt_ns_trainer_quantize_object_no_detach_rotate_multiple_fixed"
+
+# carla vqvae viewpred new
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_1'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_1'
+quant_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_1'
+
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_1_train'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_1_train'
+quant_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_1_train'
+
+
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_rotate_1_train'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_rotate_1_train'
+quant_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_rotate_1_train'
+
+# carla viewpred occ low res
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bbt_ns_carla_trainer_rgb_occ_orient_low_res"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bbt_ns_carla_trainer_rgb_occ_orient_low_res"
+occ_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bbt_ns_carla_trainer_rgb_occ_orient_low_res"
+
+
+
+# carla vqvae viewpred
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_gt'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_gt'
+quant_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_bbt_ns_carla_trainer_quantize_object_no_detach_rotate_100_gt'
+# carla viewpred occ
+feat_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bbt_ns_carla_trainer_rgb_occ_orient_low_res"
+view_init = "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bbt_ns_carla_trainer_rgb_occ_orient_low_res"
+occ_init =  "02_m144x144x144_p128x128_1e-3_F32_Oc_c1_s1_V_d32_c1_bbt_ns_carla_trainer_rgb_occ_orient_low_res"
+
+
+
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_view'
+occ_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_view'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_view'
+
+
+
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_1_train'
+occ_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_1_train'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_1_train'
+quant_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_1_train'
+
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mc_smallt_ns_carla_trainer_view_small'
+occ_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mc_smallt_ns_carla_trainer_view_small'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mc_smallt_ns_carla_trainer_view_small'
+
+feat_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_rotate_1_train'
+occ_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_rotate_1_train'
+view_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_rotate_1_train'
+quant_init = '02_m144x144x144_p128x128_1e-3_F32_V_d32_c1_mct_ns_carla_trainer_quantize_object_no_detach_rotate_1_train' 
