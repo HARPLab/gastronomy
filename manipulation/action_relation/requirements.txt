@@ -5,7 +5,7 @@ _libgcc_mutex=0.1=main
 attrs=19.3.0=py_0
 backcall=0.1.0=py37_0
 blas=1.0=mkl
-bleach=3.1.0=py_0
+bleach=3.1.4=py_0
 bzip2=1.0.8=h516909a_1
 ca-certificates=2019.10.16=0
 certifi=2019.9.11=py37_0
@@ -47,7 +47,7 @@ nbconvert=5.6.1=py37_0
 nbformat=4.4.0=py37_0
 ncurses=6.1=hf484d3e_1002
 ninja=1.9.0=py37hfd86e86_0
-notebook=6.0.2=py37_0
+notebook=6.1.5=py37_0
 numpy=1.15.4=py37h1d66e8a_0
 numpy-base=1.15.4=py37h81de0dd_0
 olefile=0.46=py37_0
@@ -59,7 +59,7 @@ parso=0.5.1=py_0
 pep8=1.7.1=py37_0
 pexpect=4.7.0=py37_0
 pickleshare=0.7.5=py37_0
-pillow=5.4.1=py37h34e0f95_0
+pillow=7.1.0=py37_0
 pip=19.2.3=py37_0
 prometheus_client=0.7.1=py_0
 prompt_toolkit=3.0.0=py_0
