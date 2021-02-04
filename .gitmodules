@@ -22,3 +22,6 @@
 [submodule "hri/psiturk-legibility-study"]
 	path = hri/psiturk-legibility-study
 	url = https://github.com/HARPLab/psiturk-legibility-study.git
+[submodule "hri/restaurant_simulator"]
+	path = hri/restaurant_simulator
+	url = https://github.com/HARPLab/restaurant_simulator.git
