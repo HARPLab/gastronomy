@@ -5,7 +5,7 @@ _libgcc_mutex=0.1=main
 attrs=19.3.0=py_0
 backcall=0.1.0=py37_0
 blas=1.0=mkl
-bleach=3.1.4=py_0
+bleach=3.3.0=py_0
 bzip2=1.0.8=h516909a_1
 ca-certificates=2019.10.16=0
 certifi=2019.9.11=py37_0
