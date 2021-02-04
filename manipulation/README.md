@@ -8,11 +8,19 @@ The Franka-Interface package in the franka-interface folder and the FrankaPy pac
 
 ## Playing with Food
 
-This folder contains the scripts we used to collect the data for our ISER 2020 Abstract. In addition, it contains the scripts we used to train our preliminary food embeddings and a link to the Google Drive containing all of our collected data.
+This folder contains the scripts we used to collect the data for our ISER 2020 Paper. In addition, it contains the scripts we used to train our preliminary food embeddings and a link to the Google Sites containing all of our collected data.
 
 ## Contingency Planning
 
-This folder contains all the scripts for a work-in-progress ICRA paper on generating parameters for skills when a previous executed skill may have failed. It depends on Nvidia's isaac gym simulator and a python wrapper library called carbongym-utils.
+This folder contains all the scripts for a work-in-progress IROS paper on generating parameters for skills when a previous executed skill may have failed. It depends on Nvidia's isaac gym simulator and a python wrapper library called carbongym-utils.
+
+## Cutting with RL
+
+This folder contains work by Ami Sawhney that is detailed in the Robotic Cutting and Reinforcement Learning section of the Sony-CMU Gastronomy Project Y3 Deliverables document.
+
+## Delta Robots
+
+This folder contains CAD models for building the Delta Robot Array End-effectors that we will be submitting a paper to RSS in the near future.
 
 ## DMP
 
@@ -28,7 +36,7 @@ The action relation folder contains work by Mohit Sharma that is detailed in the
 
 ## Plating
 
-The plating folder contains code by Steven Lee that is detailed in the plating section of the Sony-CMU Gastronomy Project Y2 Deliverables document. In addition, it contains previous code by Travers Rhodes to learn trajectories from demonstrations that are used in the plating demo. It can be used with any robot that has a ROS joint controller interface. It includes code to segment demonstrations using a changepoint detection algorithm, and it contains code to translate and execute those trajectories on a robot.
+The plating folder contains code by Steven Lee that is detailed in the plating section of the Sony-CMU Gastronomy Project Y3 Deliverables document. In addition, it contains previous code by Travers Rhodes to learn trajectories from demonstrations that are used in the plating demo. It can be used with any robot that has a ROS joint controller interface. It includes code to segment demonstrations using a changepoint detection algorithm, and it contains code to translate and execute those trajectories on a robot.
 
 ## Magnetic Stickers
 

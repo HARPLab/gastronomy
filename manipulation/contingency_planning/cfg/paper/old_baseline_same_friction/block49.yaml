@@ -1,0 +1,26 @@
+block:
+  urdf_path: block49.urdf
+  asset_options:
+    max_linear_velocity: 10.0
+    max_angular_velocity: 40.0
+  block1:
+    shape_props:
+      restitution: 0.3
+      friction: 0.15135711813762398
+      rolling_friction: 0.17223135813834156
+      torsion_friction: 0.7429984611195638
+      thickness: 2e-3
+  block2:
+    shape_props:
+      restitution: 0.3
+      friction: 0.15135711813762398
+      rolling_friction: 0.17223135813834156
+      torsion_friction: 0.7429984611195638
+      thickness: 2e-3
+  block3:
+    shape_props:
+      restitution: 0.3
+      friction: 0.15135711813762398
+      rolling_friction: 0.17223135813834156
+      torsion_friction: 0.7429984611195638
+      thickness: 2e-3

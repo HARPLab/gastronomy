@@ -152,7 +152,7 @@ macro(find_package)
   endif()
 endmacro()
 
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 if(BUILD_TESTS)
   enable_testing()
   add_subdirectory(test)

@@ -1,5 +1,5 @@
 # playing_with_food
-This repository was used to collect [this dataset](https://drive.google.com/drive/folders/1_MnozJfjZEEBgxkkDQ15krganOOnNvw4?usp=sharing) involving playing and cutting food items. There is also some additional data [here](https://drive.google.com/drive/folders/1xev_vYOdtBSuS04MZicKytYbqtRjF34x?usp=sharing)
+This repository was used to collect [this dataset](https://sites.google.com/view/playing-with-food/home) involving playing and cutting food items.
 
 ## Instructions
 

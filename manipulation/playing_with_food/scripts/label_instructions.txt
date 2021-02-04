@@ -1,0 +1,18 @@
+# Terminal Commands
+
+virtualenv labelenv -p python3.6
+source labelenv/bin/activate
+git clone https://github.com/scaelles/DEXTR-KerasTensorflow
+cd DEXTR-KerasTensorflow
+pip install matplotlib opencv-python pillow scikit-learn scikit-image h5py
+pip install tensorflow-gpu==1.15.0
+pip install keras==2.1.0
+cd models/
+chmod +x download_dextr_model.sh
+./download_dextr_model.sh
+cd ..
+
+Finally download the label.py file from playing_with_food/scripts and put it in the DEXTR-KerasTensorflow folder.
+Change the file path to the processed_data folder in label.py.
+
+python label.py

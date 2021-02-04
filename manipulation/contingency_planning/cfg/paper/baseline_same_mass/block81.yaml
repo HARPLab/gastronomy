@@ -6,21 +6,21 @@ block:
   block1:
     shape_props:
       restitution: 0.3
-      friction: 0.5479396609778932
-      rolling_friction: 0.09805714552334543
-      torsion_friction: 0.5248896369802505
+      friction: 0.20003695346967243
+      rolling_friction: 0.6396225318178121
+      torsion_friction: 0.42588623510192203
       thickness: 2e-3
   block2:
     shape_props:
       restitution: 0.3
-      friction: 0.09817876041798723
-      rolling_friction: 0.5961157812056103
-      torsion_friction: 0.4233341802977205
+      friction: 0.4224858456957403
+      rolling_friction: 0.10584516388286036
+      torsion_friction: 0.6752803750171604
       thickness: 2e-3
   block3:
     shape_props:
       restitution: 0.3
-      friction: 0.5479396609778932
-      rolling_friction: 0.09805714552334543
-      torsion_friction: 0.5248896369802505
+      friction: 0.4224858456957403
+      rolling_friction: 0.10584516388286036
+      torsion_friction: 0.6752803750171604
       thickness: 2e-3

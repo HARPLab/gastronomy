@@ -4,7 +4,7 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.07152423567828577 0.05 0.05"/>
+        <box size="0.053207736933648886 0.05 0.05"/>
       </geometry>
       <material name="dark_yellow">
         <color rgba="0.5 0.5 0.1 1"/>
@@ -13,12 +13,12 @@
     <collision>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.07152423567828577 0.05 0.05"/>
+        <box size="0.053207736933648886 0.05 0.05"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="0.5797100351243459"/>
-      <inertia ixx="0.00024154584796847755" ixy="0" ixz="0" iyy="0.00036790892980030496" iyz="0" izz="0.00036790892980030496"/>
+      <mass value="0.5"/>
+      <inertia ixx="0.00020833333333333337" ixy="0" ixz="0" iyy="0.00022212763623334934" iyz="0" izz="0.00022212763623334934"/>
     </inertial>
   </link>
 
@@ -26,7 +26,7 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.039237882160857114 0.05 0.05"/>
+        <box size="0.05936612447777291 0.05 0.05"/>
       </geometry>
       <material name="dark_yellow">
         <color rgba="0.5 0.5 0.1 1"/>
@@ -35,12 +35,12 @@
     <collision>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.039237882160857114 0.05 0.05"/>
+        <box size="0.05936612447777291 0.05 0.05"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="0.5797100351243459"/>
-      <inertia ixx="0.00024154584796847755" ixy="0" ixz="0" iyy="0.00019515027204466094" iyz="0" izz="0.00019515027204466094"/>
+      <mass value="0.5"/>
+      <inertia ixx="0.00020833333333333337" ixy="0" ixz="0" iyy="0.00025101403064626784" iyz="0" izz="0.00025101403064626784"/>
     </inertial>
   </link>
 
@@ -48,7 +48,7 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.039237882160857114 0.05 0.05"/>
+        <box size="0.0374261385885782 0.05 0.05"/>
       </geometry>
       <material name="dark_yellow">
         <color rgba="0.5 0.5 0.1 1"/>
@@ -57,25 +57,25 @@
     <collision>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.039237882160857114 0.05 0.05"/>
+        <box size="0.0374261385885782 0.05 0.05"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="0.5797100351243459"/>
-      <inertia ixx="0.00024154584796847755" ixy="0" ixz="0" iyy="0.00019515027204466094" iyz="0" izz="0.00019515027204466094"/>
+      <mass value="0.5"/>
+      <inertia ixx="0.00020833333333333337" ixy="0" ixz="0" iyy="0.00016252982706881094" iyz="0" izz="0.00016252982706881094"/>
     </inertial>
   </link>
 
   <joint name="block_link1" type="fixed">
     <parent link="block1"/>
     <child link="block2"/>
-    <origin xyz="0.055381058919571444 0.0 0.0"/>
+    <origin xyz="0.0562869307057109 0.0 0.0"/>
   </joint>
 
   <joint name="block_link2" type="fixed">
     <parent link="block2"/>
     <child link="block3"/>
-    <origin xyz="0.039237882160857114 0.0 0.0"/>
+    <origin xyz="0.048396131533175554 0.0 0.0"/>
   </joint>
 
 </robot>
