@@ -11,7 +11,7 @@ if __name__ == '__main__':
     parser.add_argument('--sequence_length', '-l', type=int, default=8)
     parser.add_argument('--label_type', '-t', type=str, default='center')
     parser.add_argument('--label_file_names', '-n', type=str, default='food_boxes*')
-    parser.add_argument('--save_path', '-s', type=str, default='../)
+    parser.add_argument('--save_path', '-s', type=str, default='../')
     parser.add_argument('--fake_train_data_path', '-f', type=str, default=None)
     args = parser.parse_args()
 

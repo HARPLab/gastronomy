@@ -6,75 +6,11 @@ import glob
 import matplotlib.pyplot as plt
 import torch
 import itertools
-
+import quaternion
+from collections import Mapping, Container, Counter
+from sys import getsizeof
+from matplotlib.lines import Line2D
 from multiprocessing import Pool
-from PIL import Image, ImageDraw
-
-def crop_image(img, mode='Rectangle', fill_color=(0,0,0)):
-    """
-    Crops the blank space out of an image (ie. where the pixels are zero)
-    
-    Inputs:
-        img - (RGB image, np.array): input image to crop
-        mode - (string): shape to crop to, default is a rectangle.
-                other option include: circle
-        fill_color - (tuple): RGB color to fill blank space with
-
-    Outputs:
-        cropped_image - (RGB image, np.array): cropped image
-        npAlpha - (numpy array, HxW): the alpha array for the cropped image
-
-    References:
-        https://stackoverflow.com/questions/51486297/cropping-an-image-in-a-circular-way-using-python
-        https://stackoverflow.com/questions/14211340/automatically-cropping-an-image-with-python-pil
-        https://stackoverflow.com/questions/9166400/convert-rgba-png-to-rgb-with-pil
-    """
-    # convert to B&W image and crop image into rectangle
-    bw_img = img.max(axis=2)
-    non_empty_columns = np.where(bw_img.max(axis=0)>0)[0]
-    non_empty_rows = np.where(bw_img.max(axis=1)>0)[0]
-    cropBox = (min(non_empty_rows), max(non_empty_rows), min(non_empty_columns), max(non_empty_columns))
-    crop = img[cropBox[0]:cropBox[1]+1, cropBox[2]:cropBox[3]+1 , :]
-    
-    if mode == 'Circle':
-        # Convert to 'Image' obj and make alpha layer w/ circle
-        pil_img = Image.fromarray(np.uint8(crop))
-        h, w = pil_img.size
-        alpha = Image.new('L', pil_img.size, 0)
-        draw = ImageDraw.Draw(alpha)
-        draw.pieslice([0,0,h,w],0,360,fill=255)
-        
-        # add alpha layer to RGB and convert back to 'Image' obj
-        npAlpha = np.array(alpha)
-        npImage = np.dstack((crop,npAlpha))
-        npImage = Image.fromarray(np.uint8(npImage))
-        
-        # replace empty areas w/ fill_color and return image
-        cropped_image = Image.new('RGB', npImage.size, fill_color)
-        cropped_image.paste(npImage, mask=npImage.split()[3])
-    
-    return np.array(cropped_image), npAlpha
-
-def letterbox_image(img, in_dim):
-    '''
-    resize image to square with unchanged aspect ratio using padding
-    
-    Inputs:
-        img: image to resize
-        in_dim: dimension to resize to
-    '''
-    img_w, img_h = img.shape[1], img.shape[0]
-    w, h = in_dim
-    new_w = int(img_w * min(w/img_w, h/img_h))
-    new_h = int(img_h * min(w/img_w, h/img_h))
-    resized_image = cv2.resize(img, (new_w,new_h), interpolation = cv2.INTER_CUBIC)
-    
-    canvas = np.full((in_dim[1], in_dim[0], 3), 128)
-
-    canvas[(h-new_h)//2:(h-new_h)//2 + new_h,(w-new_w)//2:(w-new_w)//2 + new_w,  :] = resized_image
-    
-    #convert BGR to RGBef letterbox_image(img, in_dim):
-    return canvas[:,:,::-1]
 
 def make_mask(size, area, background, mask_value, dtype=None):
     """
@@ -97,6 +33,15 @@ def make_mask(size, area, background, mask_value, dtype=None):
 
     return mask
 
+def get_mask(array, axis=2, mask_value=0):
+    """
+    Returns a boolean mask of the given array. False when all values along
+    axis are equal to the mask_value, True elsewhere
+    """
+    mask = (array != mask_value).all(axis=axis)
+
+    return mask
+
 def many_processes(function, num_processes, args=None):
     """
     Function uses multiprocessing library to run multiple processes
@@ -115,18 +60,14 @@ def many_processes(function, num_processes, args=None):
 
     return output[0]
 
-def plt_imshow_tensor(img, one_channel=False):
-    """
-    convert input to cpu, HWD, RGB, and unnormalize first
-    """
-    if one_channel:
-        img = img.mean(dim=0)
-    npimg = img.numpy()
-    npimg = npimg / 255.0 # change to values between 1 and 0
-    if one_channel:
-        plt.imshow(npimg, cmap="Greys")
-    else:
-        plt.imshow(np.transpose(npimg, (1, 2, 0)))
+def mergeDict(dict1, dict2):
+    ''' Merge dictionaries and keep values of common keys in list'''
+    dict3 = {**dict1, **dict2}
+    for key, value in dict3.items():
+        if key in dict1 and key in dict2:
+            dict3[key] = [value , dict1[key]]
+ 
+    return dict3
 
 def mins_max(center, height, width, dtype=int):
     """
@@ -138,6 +79,7 @@ def mins_max(center, height, width, dtype=int):
     Outputs:
         out: np.array of type dtype and form [xmin, ymin, xmax, ymax]
     """
+    center = center.astype(dtype)
     y1 = center[0] - height//2
     y2 = y1 + height
     x1 = center[1] - width//2
@@ -222,39 +164,6 @@ def ordered_combos(sequence, length):
 
     return np.array(combos, dtype=int)
 
-def paste_image(im1, im2, location, alpha1=0, alpha2=1, alpha_mask=None):
-    """
-    Paste image 2 onto image 1 at location
-
-    Inputs:
-        im1 - (H, W, D): background image, assuming RGB image as a numpy array
-        im2 - (H, W, D): foreground image, assuming RGB image as a numpy array
-        location - (H, W): location to place center of im2 onto im1
-        alpha1 - (float): value between 0 and 1 to weigh image1 pixels
-        alpha2 - (float): value between 0 and 1 to weigh image2 pixels
-                          (alpha values from weighted sum)
-        alpha_mask - (np.array, HxW): alpha layer for im2
-
-    Outputs:
-        image - (RGB image, np.array): output RGB image
-    """
-    # get dimensions
-    h, w = im2.shape[:2]
-    loc = mins_max(location, h, w, dtype=int)
-    # crop im2 to same size as im1 and add alpha channel
-    im2_crop = np.zeros(im1.shape)
-    alpha_crop = np.zeros(im1.shape[:2])
-    im2_crop[loc[1]:loc[3], loc[0]:loc[2], :] = im2
-    alpha_crop[loc[1]:loc[3], loc[0]:loc[2]] = alpha_mask
-    im2_crop = np.dstack((im2_crop, alpha_crop))
-    # Convert to 'Image' objects
-    im2_crop = Image.fromarray(np.uint8(im2_crop))
-    image = Image.fromarray(np.uint8(im1))
-    # paste image
-    image.paste(im2_crop, mask=im2_crop.split()[3])
-
-    return np.array(image)
-
 def plot_box(images, labels, shapes, seq_length, subplot_shape=(1,1), title=None):
     """
     Generate image of the predictions the network made
@@ -286,7 +195,7 @@ def plot_box(images, labels, shapes, seq_length, subplot_shape=(1,1), title=None
         plt.subplot(subplot_shape[0], subplot_shape[1], counter+1)
         height, width = obj_shape[0], obj_shape[1]
         x1, y1, _, _ = mins_max((label[0], label[1]), height, width)
-        plt_imshow_tensor(image.cpu())
+        image_utils.plt_imshow_tensor(image.cpu())
         box = plt.Rectangle((x1, y1), width, height, linewidth=2, edgecolor='r', fill=False)
         plt.gca().add_patch(box)
 
@@ -328,13 +237,17 @@ def sub_dirs(directory):
             dir_list.append(os.path.join(directory, files))
     return dir_list
 
-def sub_files(directory, file_suffix):
+def sub_files(directory, file_suffix, prefix=None):
     """
-    return all the immediate files in directory that end in file_suffix as list
+    return all the immediate files in directory that end in file_suffix as numerical sorted list
     """
     file_list = []
-    for filename in sorted(glob.glob('{}/{}'.format(directory, file_suffix)), key=numerical_sort):
-        file_list.append(filename)
+    if prefix is not None:
+        for filename in sorted(glob.glob('{}/{}*{}'.format(directory, prefix, file_suffix)), key=numerical_sort):
+            file_list.append(filename)
+    else:
+        for filename in sorted(glob.glob('{}/*{}'.format(directory, file_suffix)), key=numerical_sort):
+            file_list.append(filename)
     return file_list
 
 def save_as_img(array, save_path, file_type='png'):
@@ -383,8 +296,8 @@ def remove_first_last(array1, array2, amount=1):
         out1 = array1[amount:, :]
     elif array1.ndim == 3:
         out1 = array1[:, amount:, :]
-    elif array2.ndim == 4:
-        out2 = array2[amount:, :, :, :]
+    elif array1.ndim == 4:
+        out1 = array1[amount:, :, :, :]
     else:
         out1 = array1[:, amount:, :, :, :]
     
@@ -400,6 +313,7 @@ def remove_first_last(array1, array2, amount=1):
     return out1, out2
 
 def get_accuracy(predicted, ground_truth, accept_thresh=None):
+    #TODO move this to accuracy.py file
     """
     calculate the percentage of times the predictions were correct
     
@@ -423,3 +337,181 @@ def get_accuracy(predicted, ground_truth, accept_thresh=None):
         accuracy = torch.sum(num_correct) / (np.prod(num_correct.shape))
 
     return accuracy
+
+def plot_grad_flow(named_parameters):
+    '''
+    Plots the gradients flowing through different layers in the net during training.
+    Can be used for checking for possible gradient vanishing / exploding problems.
+    
+    Usage: Plug this function in Trainer class after loss.backwards() as 
+    "plot_grad_flow(self.model.named_parameters())" to visualize the gradient flow
+    NOTE: This slows process speed, so only use for debugging
+    Ref: https://discuss.pytorch.org/t/check-gradient-flow-in-network/15063/10
+    '''
+    fig = plt.figure()
+    ave_grads = []
+    max_grads= []
+    layers = []
+    for n, p in named_parameters:
+        if(p.requires_grad) and ("bias" not in n):
+            temp_xlabel = n[7:][:-7] # only keep the layer name
+            layers.append(temp_xlabel)
+            ave_grads.append(p.grad.abs().mean())
+            max_grads.append(p.grad.abs().max())
+    plt.bar(np.arange(len(max_grads)), max_grads, alpha=0.1, lw=1, color="c")
+    plt.bar(np.arange(len(max_grads)), ave_grads, alpha=0.1, lw=1, color="b")
+    plt.hlines(0, 0, len(ave_grads)+1, lw=2, color="k" )
+    plt.xticks(range(0,len(ave_grads), 1), layers, rotation="vertical", fontsize=6)
+    plt.xlim(left=0, right=len(ave_grads))
+    plt.ylim(bottom = -0.001, top=0.02) # zoom in on the lower gradient regions
+    plt.xlabel("Layers")
+    plt.ylabel("average gradient")
+    plt.title("Gradient flow")
+    plt.grid(True)
+    plt.legend([Line2D([0], [0], color="c", lw=4),
+                Line2D([0], [0], color="b", lw=4),
+                Line2D([0], [0], color="k", lw=4)], ['max-gradient', 'mean-gradient', 'zero-gradient'])
+    
+    return fig
+
+def conv2d_out_dim(in_dim, kernel_size, padding=1, stride=1, dilation=1):
+    """Function to calculate the output size of a dimension after being passed through torch.nn.Conv2d"""
+    out_dim = ((in_dim + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1
+    return out_dim
+
+def maxpool2d_out_dim(in_dim, kernel_size, padding=1, stride=1, dilation=1):
+    """Function to calculate the output size of a dimension after being passed through torch.nn.MaxPool2d"""
+    out_dim = ((in_dim + 2*padding - dilation*(kernel_size-1) - 1)/stride) + 1
+    return out_dim
+
+    #TODO make a util function to calculate the output size of a layer given a input dim
+    #ie get the input size of a linear layer by giving input h or w
+ 
+def deep_getsizeof(o, ids):
+    """Find the memory footprint of a Python object
+ 
+    This is a recursive function that drills down a Python object graph
+    like a dictionary holding nested dictionaries with lists of lists
+    and tuples and sets.
+ 
+    The sys.getsizeof function does a shallow size of only. It counts each
+    object inside a container as pointer only regardless of how big it
+    really is.
+ 
+    :param o: the object
+    :param ids:
+    :return:
+    Ref:
+     - https://code.tutsplus.com/tutorials/understand-how-much-memory-your-python-objects-use--cms-25609
+    """
+    d = deep_getsizeof
+    if id(o) in ids:
+        return 0
+ 
+    r = getsizeof(o)
+    ids.add(id(o))
+ 
+    if isinstance(o, str) or isinstance(0, unicode):
+        return r
+ 
+    if isinstance(o, Mapping):
+        return r + sum(d(k, ids) + d(v, ids) for k, v in o.iteritems())
+ 
+    if isinstance(o, Container):
+        return r + sum(d(x, ids) for x in o)
+ 
+    return r
+
+def rpy_to_quat(rpy):
+    return quaternion.from_euler_angles(rpy)
+
+def quat_to_rpy(q):
+    """
+    Convert a quaternion numpy array to RPY in radians. Assuming q is formatted as "x,y,z,w"
+    """
+    q = quaternion.quaternion(q[3], q[0], q[1], q[2])
+    return quaternion.as_euler_angles(q)
+
+def s_curve(x, A=1, w=1, phi=0):
+    """
+    Generate the y values of a sine curve with given array of x values
+    
+    Inputs:
+        x (np.array): array of x values to get the y values for
+        A (float): amplitude of the sine wave 
+        w (float): angular frequency of the sine wave
+        phi (float): phase shift of the curve
+    """
+    return A * np.sin(w*x + phi)
+
+def elipse_curve(theta, x_radius=1, y_radius=1, center=[0,0]):
+    """
+    Generate x and y coordinates for given theta and radii in polar coordinates. 
+    
+    Inputs:
+        theta (np.array): array of theta values to get cartesian coordinates for
+        x (float): radius of the elipse along its x-axis
+        y (float): radius of the elipse along its y-axis
+        center (list): the (x,y) coordinates of the center of the elipse 
+    """
+    x = x_radius * np.cos(theta) + center[0]
+    y = y_radius * np.sin(theta) + center[1]
+    return x, y
+
+def multimode(array, axis=1, num_modes=2, decimals=3, trans=False):
+    """
+    Get the first N modes in array along the given axis. If more than one mode
+    same count, the first nodes will be returned until num_modes are returned.
+    NOTE: This has only been tested on 2-D arrays
+    Inputs:
+        array (np.array): array to find modes for.
+        axis (int): axis to get modes along.
+        num_modes (int): number of modes to return per axis index.
+        trans (bool): whether to transpose the outputs
+    Outputs:
+        modes (np.array): ((dim_of_given_axis) x num_modes) array of the mode values
+        count (np.array): ((dim_of_given_axis) x num_modes) array of the count of 
+            each value in the modes array
+    Ref:
+        - https://stackoverflow.com/questions/14793516/how-to-produce-multiple-modes-in-python
+    """
+    modes = []
+    count = []
+    for i in range(array.shape[axis]):
+        # get slice of array 
+        sliced = list(slicer(np.round(array,decimals=decimals),i,axis)) # for counting later
+        a = sliced.copy()
+        temp_modes = []
+        while True:
+            # group most_common output by frequency
+            freqs = itertools.groupby(Counter(a).most_common(), lambda x:x[1])
+            # pick off the first group (highest frequency)
+            temp_modes.extend([val for val,count in next(freqs)[1]])
+            if len(temp_modes) < num_modes:
+                # remove the values that are already in the list of modes
+                a = [value for value in a if value not in temp_modes] #TODO there is probably a faster way to do this
+            else:
+                break
+        modes.append(temp_modes[:num_modes])
+        temp_count = [sliced.count(value) for value in temp_modes[:num_modes]]
+        count.append(temp_count)
+    if trans:
+        return np.array(modes).T, np.array(count).T
+    else:
+        return np.array(modes), np.array(count)
+
+def slicer(array, idx, axis):
+    """
+    Get all the values at a index on a specific axis.
+    e.g. slicer(np.array([[0,1][2,3]]), 1, 0) returns np.array([2,3])
+    Inputs:
+        array (np.array): Array to slice
+        idx (int): index of the row, column, etc. to get
+        axis (int): axis to get slice along
+    Ref:
+        - https://stackoverflow.com/questions/24398708/slicing-a-numpy-array-along-a-dynamically-specified-axis
+    """
+    sl = [slice(None)] * array.ndim
+    sl[axis] = idx
+    return array[tuple(sl)]
+
