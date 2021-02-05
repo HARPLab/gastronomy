@@ -1,4 +1,4 @@
-This is a software package for robot planning in a restaurant setting. This package addresses long and infinite horizon planning in a restaurant setting.
+This is a software package for robot planning in a restaurant setting. This package addresses long and infinite horizon planning in a restaurant.
 
 ## Requirements
 
