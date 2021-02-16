@@ -60,6 +60,11 @@ class MultiIndPOMDPSolver:
 					sum_s_p += o_p[1] * self.update_belief_tr(env,belief_prob,s_p,action,all_poss_actions,horizon)
 		return sum_s_p
 	###################################
+	def get_tuple (self, index, dim):
+		state = np.unravel_index(index,dim)
+		new_state = list(state)
+		return new_state
+
 	def update_current_belief(self, actions, obs_indices, all_poss_actions,horizon):
 		# if action not in self.env.navigation_actions:
 		for i in range(len(self.envs)):
@@ -92,7 +97,7 @@ class MultiIndPOMDPSolver:
 
 		return True
 
-
+######################################################################################################
 	def compute_immediate_reward (self, env, beliefs, action, horizon, max_horizon, one_action, gamma, tree_s=0, all_poss_actions=False, HPOMDP=False):
 		immediate_r = 0
 		immediate_time = 0
@@ -219,10 +224,6 @@ class MultiIndPOMDPSolver:
 
 		return reward, tree_size, int(np.round(exp_time)), int(immediate_time), leaf_beliefs
 
-	def get_tuple (self, index, dim):
-		state = np.unravel_index(index,dim)
-		new_state = list(state)
-		return new_state
 
 	def compute_V (self, beliefs=None, horizon=100, max_horizon=100, one_action=None, gamma=1.0, tree_s=None, all_poss_actions=False, HPOMDP=False):
 		if beliefs is None:

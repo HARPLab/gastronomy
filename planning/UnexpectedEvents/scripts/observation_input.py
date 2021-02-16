@@ -8,6 +8,8 @@ from ipdb import set_trace
 from threading import Thread, Lock
 import sys,signal
 
+print_status = False
+
 class Sensor_Aggregator():
     def __init__(self, robot, human_input, num_tables):
         self.robot = robot
@@ -28,6 +30,7 @@ class Sensor_Aggregator():
         self.success = False
         self.hand_raises = {}
         self.unknown_tables_state = []
+        self.num_action_executions = 0
     
     def hand_raise(self, data):
         try:
@@ -55,10 +58,12 @@ class Sensor_Aggregator():
             self.mutex.release()
 
     def action_execution(self, data):
-        print (data.data)
+        # print (data.data)
         action = json.loads(data.data)
+        print ("---- action name: ", action["name"], " ----")
         self.action = action
         # set_trace()
+        self.num_action_executions += 1
         sleep(1)
         action["status"] = 0
         if len(self.hand_raises) == 0:
@@ -104,6 +109,7 @@ class Sensor_Aggregator():
     def set_cur_state(self, data):
         self.cur_state_data = json.loads(data.data)
         self.cur_table_id = self.cur_state_data['table']
+        # print (self.interrupted, self.human)
 
     def publish(self):
         self.pub_states = []
@@ -125,34 +131,43 @@ class Sensor_Aggregator():
                     while self.cur_state_data is None:
                         sleep(0.1)
 
-                    print (self.cur_state_data)
-
-                    print (self.action)
+                    if print_status:
+                        print (self.cur_state_data)
+                        print (self.action)
                     hand_raise = self.cur_state_data["hand_raise"]
                     self.x = self.cur_state_data["x"]
                     self.y = self.cur_state_data["y"]
+                    temp = self.human_input
+                    if print_status:
+                        if self.num_action_executions == 1: ############# hack
+                            print ("---- Follow the model ----")
+                            self.human_input = False
 
                     if self.interrupted or (self.human_input and hand_raise == 1) or (self.action['type'] == 2 and self.action['table'] == self.cur_state_data["table"]):
                         # set_trace()
                         if self.human_input:
                             if self.action['type'] != 2:
-                                get_follow_model = input("follow the model (y or n):")
-                                follow_model = (get_follow_model == "y")
+                                if print_status and self.num_action_executions == 2: ############# hack
+                                    # print ("---- Do not follow the model ----")
+                                    follow_model = False
+                                else:
+                                    get_follow_model = input("please enter y if you would like to follow the model and n otherwise (y or n):")
+                                    follow_model = (get_follow_model == "y")                                
                             else:
                                 follow_model = False
                         else:
                             follow_model = not(i in self.unknown_tables_state)
-                        # follow_model = False
 
                         if not follow_model:
-                            print("Table " + str(self.cur_state_data["table"]))
-                            # obs = {}
+                            if self.action['type'] == 2:
+                                print ("---- Human waiter questions ----")
+                            else:
+                                print ("---- Do not follow the model ----")
+                            if print_status:   
+                                print("Table " + str(self.cur_state_data["table"]))
                             obs = self.cur_state_data
                             obs["explicit"] = 0
-                            # if self.human_input:
-                            #     hand_raise = int(input("hand raise: "))
-                            # else: 
-                            # hand_raise = 1
+
                             obs["x"] = self.x; obs["y"] = self.y
                             food = 0
                             water = 0
@@ -165,8 +180,8 @@ class Sensor_Aggregator():
                                 # print ("-- customer satisfaction --", "0 to 5")
                                 # customer_satisfaction = int(input("customer satisfaction (0<=sat<=5): "))
                                 if self.action['type'] != 2:
-                                    print ("-- customer request --", "1:want menu, 2:ready to order, 3:want food, 4:eating, 5:want drinks, 6:drinking, 7:want bill, 8:cash ready, 9:cash collected, 10:clean table")
-                                    customer_request = int(input("current request (>0): "))
+                                    # print ("-- customer request --", "1:want menu, 2:ready to order, 3:want food, 4:eating, 5:want drinks, 6:drinking, 7:want bill, 8:cash ready, 9:cash collected, 10:clean table")
+                                    ''' customer_request = int(input("current request (>0): "))
                                     explicit = int(input("explicit (== 1 or 0): "))
                                     if customer_request == 1 or customer_request == 2: 
                                         current_request = customer_request
@@ -202,31 +217,42 @@ class Sensor_Aggregator():
 
                                     elif customer_request > 7:
                                         current_request = customer_request - 2
-                                        water = 3
-                                        # food = 3
+                                        water = 3 
 
                                 
-                                    # obs["customer_satisfaction"] = customer_satisfaction
                                     obs["hand_raise"] = hand_raise
                                     obs["current_request"] = current_request
                                     obs["cooking_status"] = cooking_status
                                     obs["food"] = food
                                     obs["water"] = water
-                                    obs["explicit"] = explicit
+                                    obs["explicit"] = explicit '''
+
+                                    obs["explicit"] = 0
+                                    if print_status and self.num_action_executions == 2: ############# hack
+                                        print ("---- Observed Unhappy ----")
+                                        obs["emotion"] = 0 
+                                    else:
+                                        emotion = int(input("unhappy (0), neutral (1), happy (2), unknown (3): "))
+                                        obs["emotion"] = emotion 
+                                    obs["have_bread"] = 0 
 
                                 else:
                                     # set_trace()
-                                    answer = int(input("answer (yes=1,no=0): "))
+                                    answer = int(input("answer (yes=y,no=n): ") == "y")
                                     obs["answer"] = answer
 
                             self.pub_states[self.cur_table_id].publish(json.dumps(obs))
                         else:
+                            print ("---- Follow the model ----")
                             obs = self.cur_state_data
-                            # obs["x"] = self.x; obs["y"] = self.y
                             self.pub_states[self.cur_table_id].publish(json.dumps(obs))
 
                     else:
+                        print ("---- Follow the model ----")
                         self.pub_states[self.cur_table_id].publish(json.dumps(self.cur_state_data))
+                        if self.num_action_executions == 1:
+                            self.human_input = temp
+                        # print ("published")
 
                     count += 1
 
@@ -248,7 +274,7 @@ if __name__ == '__main__':
         signal.signal(signal.SIGINT, signal_handler)
         robot = False
         human_input = True
-        num_tables = 3
+        num_tables = 2
         Sensor_Aggregator(robot, human_input, num_tables).publish()
     except rospy.ROSInterruptException:
         pass

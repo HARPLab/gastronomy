@@ -31,8 +31,6 @@ class AgentPOMDP(ClientPOMDP):
 		self.set_actions()
 		self.set_states()
 
-
-
 		self.dense_reward = True
 
 		# if self.print_status:
@@ -47,6 +45,7 @@ class AgentPOMDP(ClientPOMDP):
 		self.nS = 1
 		self.nO = 1
 
+		self.belief_library = {}
 		self.feature_indices = {}
 		self.obs_feature_indices = {}
 		self.unobs_feature_indices = []
@@ -418,4 +417,27 @@ class AgentPOMDP(ClientPOMDP):
 
 		return possible_obss
 
-	
+	def get_from_belief_library(self, envs, beliefs, all_poss_actions):
+		rew = None
+		part_of_action_space = all_poss_actions
+		if part_of_action_space in self.belief_library.keys():
+			if beliefs in self.belief_library[part_of_action_space].keys():
+				rew = self.belief_library[part_of_action_space][beliefs]
+
+		if rew is None:
+			rew = 0
+			for i in range(len(envs)):
+				belief = beliefs.probs[i]
+				# set_trace()
+				rew_t_t = envs[i].get_heuristic(belief)
+				rew += rew_t_t
+
+		return rew
+
+	def add_to_belief_library(self, beliefs, cost, all_poss_actions):
+		part_of_action_space = all_poss_actions
+		if len(self.belief_library.keys()) == 0:
+			self.belief_library[True] = {}
+			self.belief_library[False] = {}
+
+		self.belief_library[part_of_action_space][beliefs] = cost

@@ -25,12 +25,12 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 		self.name = "pomdp_task"
 		if not self.KITCHEN:
-			self.non_robot_features = ["cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
+			self.non_robot_features = ["have_bread","cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
 					"time_since_hand_raise", "current_request","customer_satisfaction"]
 			# self.non_robot_features = ["next_request","cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
 			# 		"time_since_hand_raise", "current_request","customer_satisfaction"]
 		else:
-			self.non_robot_features = ["cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
+			self.non_robot_features = ["have_bread","cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
 					"time_since_hand_raise", "food_picked_up","current_request","customer_satisfaction"]
 			# self.non_robot_features = ["next_request","cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise", \
 			# 		"time_since_hand_raise", "food_picked_up","current_request","customer_satisfaction"]
@@ -44,6 +44,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 		self.unobs_feature_indices = [[],[]]
 		self.observation_space_dim = [(),()]
 		self.observation_function = [{},{}]
+		self.observation_function_costs = [{},{}]
 		self.nO = [1,0]
 
 		self.set_states(obs_type=Observation_Type.ORIGINAL)
@@ -52,8 +53,10 @@ class ClientPOMDPComplex(ClientPOMDP):
 		self.dense_reward = True
 		self.state = None
 
-	def set_states (self, obs_type=Observation_Type.ORIGINAL, hidden_vars_names = [], model_vars=[]):
+	def set_states (self, obs_type=Observation_Type.ORIGINAL, hidden_vars_names = [], model_vars=[], parameter_vars={}):
+		self.belief_library = {}
 		self.observation_function[obs_type] = {}
+		self.observation_function_costs[obs_type] = {}
 		self.nO[obs_type] = 1
 		self.obs_feature_indices[obs_type] = {}
 		self.unobs_feature_indices[obs_type] = []
@@ -75,6 +78,12 @@ class ClientPOMDPComplex(ClientPOMDP):
 		self.nO[obs_type] *= 2
 		obs_feature_count += 1
 
+		## unhappy, neutral, happy, unknown
+		self.observation_space_dim[obs_type] += (4,) ## yes or no
+		self.nO[obs_type] *= 4
+		self.obs_feature_indices[obs_type]["emotion"] = obs_feature_count
+		obs_feature_count += 1
+
 		for feature in self.task.get_features():
 			if feature.type == "discrete" and feature.name in self.non_robot_features:	
 				if obs_type == Observation_Type.ORIGINAL:	
@@ -94,6 +103,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 				feature_count += 1
 
+
 		## answer to the question
 		if obs_type == Observation_Type.HUMAN_INPUT:
 			self.observation_space_dim[obs_type] += (2,) ## yes or no
@@ -111,11 +121,46 @@ class ClientPOMDPComplex(ClientPOMDP):
 				self.feature_indices[m_name] = feature_count				
 
 				self.unobs_feature_indices[Observation_Type.ORIGINAL].append(feature_count)
+				feature_count += 1
+				## added
+				self.nS *= 2
+				self.state_space_dim += (2,)
+				obs.append((0, 1, 1, "Q"+m_name))
+				self.feature_indices["Q"+m_name] = feature_count				
+
+				self.unobs_feature_indices[Observation_Type.ORIGINAL].append(feature_count)
+				feature_count += 1
+				##
+				for par_name in parameter_vars[m_name]:
+					self.nS *= 2
+					self.state_space_dim += (2,)
+					obs.append((0, 1, 1, par_name))
+					self.feature_indices[par_name] = feature_count				
+
+					self.unobs_feature_indices[Observation_Type.ORIGINAL].append(feature_count)
+					feature_count += 1
+					## added
+					self.nS *= 2
+					self.state_space_dim += (2,)
+					obs.append((0, 1, 1, "Q"+par_name))
+					self.feature_indices["Q"+par_name] = feature_count				
+
+					self.unobs_feature_indices[Observation_Type.ORIGINAL].append(feature_count)
+					feature_count += 1
 
 			elif obs_type == Observation_Type.HUMAN_INPUT:
 				self.unobs_feature_indices[Observation_Type.HUMAN_INPUT].append(feature_count)
-
-			feature_count += 1
+				feature_count += 1
+				## added
+				self.unobs_feature_indices[Observation_Type.HUMAN_INPUT].append(feature_count)
+				feature_count += 1
+				##
+				for par_name in parameter_vars[m_name]:
+					self.unobs_feature_indices[Observation_Type.HUMAN_INPUT].append(feature_count)
+					feature_count += 1	
+					## added
+					self.unobs_feature_indices[Observation_Type.HUMAN_INPUT].append(feature_count)
+					feature_count += 1		
 
 
 		# robot's features
@@ -139,12 +184,15 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 		self.unobs_feature_indices[obs_type].sort()
 
-		print ("# states: ", self.nS)
 		if obs_type == Observation_Type.ORIGINAL:	
 			self.state_space = obs
 		if print_status:
+			print ("# states: ", self.nS)
 			print ("state space: ", self.state_space)
 			print ("state space dim: ", self.state_space_dim)
+			print ("states:")
+			for o in obs:
+				print (o)
 
 	def set_actions(self, clarification_actions=[]):
 		self.actions = []
@@ -165,6 +213,8 @@ class ClientPOMDPComplex(ClientPOMDP):
 		self.actions.append(Action(10, 'table is clean - table '+str(self.task.table.id), self.task.table.id, Action_Type.SERVE, 1))
 		
 		self.actions.append(Action(11, 'pick up food for table '+str(self.task.table.id), self.task.table.id, Action_Type.INFORMATIVE, 1))
+		self.actions.append(Action(12, 'please take the bread - table '+str(self.task.table.id), self.task.table.id, Action_Type.SERVE, 1))
+
 		if self.ACTIVE_PLANNING: # changing this
 			len_actions = len(self.actions)
 			action_index = len(self.actions)
@@ -203,6 +253,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 			self.valid_actions.append(self.actions[self.task.table.id + nA_prev])
 
 		self.feasible_actions = list(self.valid_actions)
+		# self.feasible_actions.pop(0)
 		# for i in reversed(range(self.non_navigation_actions_len-self.len_clarification_actions,self.non_navigation_actions_len)):
 		# 	self.feasible_actions.pop(i)
 
@@ -218,6 +269,10 @@ class ClientPOMDPComplex(ClientPOMDP):
 		self.noop_actions['4'] = Action(self.no_op_action_id, "no op 4t - table "+str(self.task.table.id), self.task.table.id, Action_Type.INFORMATIVE, 4)
 		
 		self.action_space = spaces.Discrete(self.nA)
+
+		if print_status:
+			for a in self.feasible_actions:
+				a.print()
 
 	def compute_satisfaction(self, max_time, max_sat, start_time, new_time, start_sat, threshold):
 		new_sat = start_sat
@@ -235,7 +290,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 		return new_sat
 
-	def simulate_action(self, start_state_index, action, all_poss_actions=False, horizon=None, remaining_time_steps=None):
+	def simulate_action(self, start_state_index, action, all_poss_actions=False, horizon=None, remaining_time_steps=None, modified=True):
 		global GLOBAL_TIME
 
 		if remaining_time_steps is None:
@@ -250,6 +305,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 			k_steps = action.time_steps
 
 		reward = 0
+		reward += action.cost
 		start_state =  self.get_state_tuple(start_state_index)
 
 		outcomes = []		
@@ -278,12 +334,18 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 				if new_position != (self.task.table.goal_x,self.task.table.goal_y):
 					reward_nav = 0.0
+				else:
+					if reward_nav == 0:
+						reward_nav = 1
 
 			elif action.kitchen:
 				new_position, reward_nav, k_steps = self.simulate_go_to_kitchen_action(action, current_position)
 
 				if not self.is_part_of_action_space(action): ## be careful, this won't work if pomdps share actions
 					reward_nav = 0.0
+				else:
+					if reward_nav == 0:
+						reward_nav = 1
 
 
 			if all_poss_actions or self.is_part_of_action_space(action):
@@ -324,6 +386,9 @@ class ClientPOMDPComplex(ClientPOMDP):
 				cooking_prob.append((0.3,new_state [self.feature_indices['cooking_status']]))
 				cooking_prob.append((0.7,new_state [self.feature_indices['cooking_status']]+1))
 
+		if start_state [self.feature_indices['current_request']] == 3 and start_state[self.feature_indices['cooking_status']] < 2:
+			if start_state[self.feature_indices['have_bread']] == 1:
+				new_state[self.feature_indices['have_bread']] = 0
 
 		if start_state [self.feature_indices['current_request']] == 3 and start_state [self.feature_indices['cooking_status']] == 2:
 			if start_state [self.feature_indices['food']] == 0:
@@ -405,7 +470,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 			terminal = True
 			reward = 0.0
 			if (action.id == 3 or action.type == Action_Type.SERVE or action.id == 0) and distance_to_table != 0:
-				reward = -np.Inf
+				reward = self.goal_pomdp_reward(-np.Inf)
 			outcomes.append((1.0,self.get_state_index(new_state), reward, terminal, 1, False))
 		else:
 			if action.type == Action_Type.NAVIGATION: 
@@ -477,6 +542,16 @@ class ClientPOMDPComplex(ClientPOMDP):
 						# 		new_outcomes.append((outc[0]*0.2,self.get_state_index(out_s), outc[2], outc[3], outc[4], outc[5]))
 
 						# 	outcomes = new_outcomes
+					elif action.id == 12 and current_req == 3 and start_state[self.feature_indices['cooking_status']] < 2 and distance_to_table == 0:
+						# reward += 1
+						if start_state[self.feature_indices['have_bread']] == 0:
+							# set_trace()
+							new_state [self.feature_indices['customer_satisfaction']] = self.state_space[self.feature_indices['customer_satisfaction']][1]
+							new_state [self.feature_indices['have_bread']] = 1
+							outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,True), False, 1, False))
+						else:
+							reward = self.goal_pomdp_reward(-np.Inf)
+							outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
 
 					else:
 					# 	next_req = start_state [self.feature_indices['next_request']]
@@ -487,13 +562,14 @@ class ClientPOMDPComplex(ClientPOMDP):
 					# 		reward += 0
 					# 		outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
 					# 	else:
-						reward += -np.Inf # negative reward for executing the wrong serve action given the current state 
+						reward += self.goal_pomdp_reward(-np.Inf) # negative reward for executing the wrong serve action given the current state 
 						outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
 
 
 				elif action.id == 0 and distance_to_table == 0 and start_state [self.feature_indices['hand_raise']] == 1 and \
 						start_state [self.feature_indices['time_since_hand_raise']] > 4 and start_state [self.feature_indices['time_since_hand_raise']] < 9:
-					new_state [self.feature_indices['time_since_hand_raise']] = 0
+					reward += self.goal_pomdp_reward(-np.Inf)
+					# new_state [self.feature_indices['time_since_hand_raise']] = 0
 
 					# if sat == self.state_space[self.feature_indices['customer_satisfaction']][0]: ## low
 					# 	new_state [self.feature_indices['customer_satisfaction']] = sat
@@ -515,42 +591,83 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 
 				elif action.id == 2 and current_req == 3 and start_state [self.feature_indices['cooking_status']] < 2 and distance_to_table == 0:
-					new_state [self.feature_indices['customer_satisfaction']] = self.state_space[self.feature_indices['customer_satisfaction']][1] - 1
-					outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
-					
+					reward += self.goal_pomdp_reward(-np.Inf) ## do not take food is not ready for now
+					if sat == self.state_space[self.feature_indices['customer_satisfaction']][1]: ## high
+						new_state [self.feature_indices['customer_satisfaction']] = sat
+						outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,True), False, 1, False))
+					else: 
+						new_state [self.feature_indices['customer_satisfaction']] = sat
+						outcomes.append((0.9,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,True), False, 1, False))
+						new_state [self.feature_indices['customer_satisfaction']] = sat + 1
+						outcomes.append((0.1,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,True), False, 1, False))
+
 				elif action.id == 10 and current_req == 8 and new_state [self.feature_indices['hand_raise']] == 1 and distance_to_table == 0:
 					# print (start_state, new_state)
 					# set_trace()
 					new_state [self.feature_indices['hand_raise']] = 0 
 					terminal = True
-					reward += 100.0
+					reward += self.goal_pomdp_reward(100.0)
 					outcomes.append((1.0,self.get_state_index(new_state), reward, terminal, 1, False))
 
-				elif action.type == Action_Type.CLARIFICATION and distance_to_table == 0:
-					reward += action.cost
-					outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+				elif action.type == Action_Type.CLARIFICATION:
+					if action.state["cat"] == 1:
+						if start_state [self.feature_indices["Q"+"m" + str(action.state["model_num"])]] == 1:
+							reward = np.Inf
+						new_state [self.feature_indices["Q"+"m" + str(action.state["model_num"])]] = 1 
+
+						outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+					elif action.state["cat"] == 2:
+						if "observation" in action.state.keys():
+							name = "_o" + str(action.state["observation"][1])
+						elif "start_state" in action.state.keys():
+							name = "_s" + str(action.state["next_state"])
+
+						if start_state[self.feature_indices["Q"+"m" + str(action.state["model_num"]) + name]] == 1:
+							reward = np.Inf
+							outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+						else:
+							new_state [self.feature_indices["Q"+"m" + str(action.state["model_num"]) + name]] = 1 
+
+							if start_state[self.feature_indices["m" + str(action.state["model_num"])]] == 1 and \
+								start_state[self.feature_indices["m" + str(action.state["model_num"]) + name]] == 1:
+								outcomes.append((0.5,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+								new_state [self.feature_indices["m" + str(action.state["model_num"]) + name]] = 0
+								outcomes.append((0.5,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+							elif start_state[self.feature_indices["m" + str(action.state["model_num"])]] == 1 and \
+								start_state[self.feature_indices["m" + str(action.state["model_num"]) + name]] == 0:
+								outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+							elif start_state[self.feature_indices["m" + str(action.state["model_num"])]] == 0:
+								# reward += 5
+								outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+
+
+						# if start_state [self.feature_indices["m" + str(action.state["model_num"]) + name]] == 1:
+						# 	outcomes.append((0.5,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+						# 	new_state [self.feature_indices["m" + str(action.state["model_num"]) + name]] = 0
+						# 	outcomes.append((0.5,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
+						# else:
+						# 	# new_state [self.feature_indices["m" + str(action.state["model_num"]) + name]] = 1
+						# 	outcomes.append((1.0,self.get_state_index(new_state), reward+self.get_reward(start_state,new_state,False), False, 1, False))
 
 				elif self.KITCHEN and distance_to_kitchen == 0 and action.id == 11 and (current_req == 3 and start_state [self.feature_indices['cooking_status']] == 2)\
 					and start_state [self.feature_indices['food_picked_up']] == 0:
 					new_state [self.feature_indices['food_picked_up']] = 1
-					# reward += 1.0
 					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
 
 				elif self.KITCHEN and distance_to_kitchen == 0 and action.id == 11 and (current_req == 4 and start_state [self.feature_indices['food']] == 3)\
 					and start_state [self.feature_indices['food_picked_up']] == 0:
 					new_state [self.feature_indices['food_picked_up']] = 1
-					# reward += 1.0
 					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
 
-				elif (action.id == 2 or action.type == Action_Type.SERVE or action.id == 0 or action.type == Action_Type.CLARIFICATION) and distance_to_table != 0:
-					reward += -np.Inf
+				elif (action.id == 2 or action.type == Action_Type.SERVE or action.id == 0) and distance_to_table != 0:
+					reward += self.goal_pomdp_reward(-np.Inf)
 					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
 				elif (action.id == 2):
-					reward += -np.Inf
+					reward += self.goal_pomdp_reward(-np.Inf)
 					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
 
 				elif self.KITCHEN and action.id == 11 and distance_to_kitchen != 0:
-					reward += -np.Inf
+					reward += self.goal_pomdp_reward(-np.Inf)
 					outcomes.append((1.0,self.get_state_index(new_state), reward, False, 1, False))
 
 				else:
@@ -562,8 +679,11 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 		GLOBAL_TIME += k_steps
 		##outcomes.append((prob,self.get_state_index(new_state), reward=0, terminal, k=1, action_highlevel=False))
-		# for outcome in outcomes:
-		# 	print (start_state, action, (outcome[0],self.get_state_tuple(outcome[1]),outcome[2],outcome[3],outcome[4],outcome[5]))
+		# if self.task.table.id == 1:
+		# 	for outcome in outcomes:
+		# 		print (start_state, action.name, (outcome[0],self.get_state_tuple(outcome[1]),outcome[2],outcome[3],outcome[4],outcome[5]))
+		# 		if action.id == 12:
+		# 			set_trace()
 
 		## stochastic cooking and eating time
 		if (random_eating_time and len(eating_prob) != 0) or (random_cooking_time and len(cooking_prob) != 0) or \
@@ -601,13 +721,23 @@ class ClientPOMDPComplex(ClientPOMDP):
 			# print (outcomes)
 			# set_trace()
 
-		new_outcomes = self.compute_outcomes(k_steps, time_steps, start_state, new_state, action, all_poss_actions, horizon, outcomes)
-		new_outcomes = self.recompute_outcomes_based_on_modified_transitions(start_state_index, action, new_outcomes)
+		new_outcomes = self.compute_outcomes(k_steps, time_steps, start_state, new_state, action, all_poss_actions, horizon, outcomes, modified)
+		new_outcomes = self.recompute_outcomes_based_on_modified_transitions(start_state_index, action, new_outcomes, modified)
+		new_outcomes = self.compute_observation_cost(action, new_outcomes, modified)
+
 		if print_status:
-			print ("POMDP: ", self.task.table.id, new_outcomes, start_state, action.id, self.get_state_tuple(new_outcomes[0][1]))
+			print ("POMDP: ", self.task.table.id, start_state, action.id, action.name)
+			strs = ""
+			for n in new_outcomes:
+				strs += "(" + str(n[0]) + ","  + str(self.get_state_tuple(n[1])) + "," + str(n[2]) + ")"
+			print ("new outcomes: ", strs)
 			# set_trace()
 
 		if remaining_time_steps is None:
+			# print (new_outcomes)
+			# if (len(new_outcomes) == 1 and new_outcomes[0][0] == 0.5):
+			# 	set_trace()
+
 			if len(self.transition_function.keys()) == 0:
 				self.transition_function[True] = {}
 				self.transition_function[False] = {}
@@ -623,7 +753,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 		return new_outcomes, k_steps
 
-	def compute_outcomes(self, k_steps, time_steps, start_state, new_state, action, all_poss_actions, horizon, outcomes):
+	def compute_outcomes(self, k_steps, time_steps, start_state, new_state, action, all_poss_actions, horizon, outcomes, modified):
 		if k_steps > 1:
 			# set_trace()
 			if time_steps > 1:
@@ -636,6 +766,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 					new_state_copy [self.feature_indices['customer_satisfaction']] = temp_state [self.feature_indices['customer_satisfaction']]
 					new_state_copy [self.feature_indices['time_since_hand_raise']] = temp_state [self.feature_indices['time_since_hand_raise']]
 					new_state_copy [self.feature_indices['cooking_status']] = temp_state [self.feature_indices['cooking_status']]
+					new_state_copy [self.feature_indices['have_bread']] = temp_state [self.feature_indices['have_bread']]
 					new_state_copy [self.feature_indices['time_since_food_ready']] = temp_state [self.feature_indices['time_since_food_ready']]
 					new_state_copy [self.feature_indices['food']] = temp_state [self.feature_indices['food']]
 					new_state_copy [self.feature_indices['water']] = temp_state [self.feature_indices['water']]
@@ -643,7 +774,7 @@ class ClientPOMDPComplex(ClientPOMDP):
 					# print ("out: ", out)
 					# print ("new: ", new_state_copy)
 					partial_outcomes, partial_k_steps = self.simulate_action(self.get_state_index(new_state_copy), action, \
-							all_poss_actions, horizon, time_steps-1)
+							all_poss_actions, horizon, time_steps-1, modified)
 
 					for part_out in partial_outcomes:
 						# print ("part out: ", part_out)
@@ -670,20 +801,103 @@ class ClientPOMDPComplex(ClientPOMDP):
 
 		return outcomes
 
-	def recompute_outcomes_based_on_modified_transitions(self, start_state_index, action, outcomes):
-		if not start_state_index in self.modified_transition_function.keys() or not action.id in self.modified_transition_function[start_state_index].keys():
+	def recompute_outcomes_based_on_modified_transitions(self, start_state_index, action, outcomes, modified):
+		# if len(self.modified_transition_function) > 0:
+		# 	set_trace()
+		if not modified:
+			return outcomes
+		modified_transition_function = self.modified_transition_function
+		old_state_index = start_state_index
+		start_state = self.get_state_tuple(old_state_index)
+		selected_model = -1
+		if self.models is not None:
+			for model in range(0,len(self.models)):
+				if start_state[self.feature_indices["m"+str(model)]] == 1:
+					modified_transition_function = self.models[model].modified_transition_function
+					selected_model = model
+					break
+		else:
+			if start_state_index in modified_transition_function.keys() and action.id in modified_transition_function[start_state_index].keys():
+				# set_trace()
+				new_outcomes = []
+				non_zero_transitions = len(modified_transition_function[old_state_index][action.id]) + len(outcomes)
+				for (n_state,prob) in modified_transition_function[old_state_index][action.id]:
+					# cost = self.get_reward(self.get_state_tuple(start_state_index),self.get_state_tuple(n_state),False)
+					cost = 0
+					new_outcomes.append((1.0/non_zero_transitions, n_state, cost, False, 1, False))
+
+				for out in outcomes:
+					new_outcomes.append((1.0/non_zero_transitions,out[1],out[2],out[3],out[4],out[5]))
+				return new_outcomes
+			else:
+				return outcomes
+
+		
+		if len(modified_transition_function) > 0:
+			# set_trace()
+			new_outcomes = set()
+			for tr in modified_transition_function.keys():
+				start_modified_state = self.models[selected_model].get_state_tuple(tr)
+				if action.id in modified_transition_function[tr].keys():
+					if start_modified_state[self.models[selected_model].feature_indices["customer_satisfaction"]] >= \
+						start_state[self.feature_indices["customer_satisfaction"]]:					
+						for out in outcomes:
+							next_state = self.get_state_tuple(out[1])
+							next_modified_state = self.get_state_tuple(modified_transition_function[tr][action.id][0][0])
+							next_state[self.feature_indices["customer_satisfaction"]] = next_modified_state[self.models[selected_model].feature_indices["customer_satisfaction"]]
+							# cost = self.get_reward(start_state,next_state,False)
+							cost = action.cost + self.get_reward(start_state,next_state,False)
+							new_outcomes.add((1.0, self.get_state_index(next_state), cost))
+
+							selected_par = None
+							# set_trace()
+							for var in self.model_pars["m"+str(selected_model)]:
+								if var[0] == "state":
+									if var[2] == action.id:
+										s_m = self.models[selected_model].get_state_tuple(var[1])
+										n_m = self.models[selected_model].get_state_tuple(var[3])
+										if start_state[self.feature_indices["customer_satisfaction"]] <= s_m[self.models[selected_model].feature_indices["customer_satisfaction"]] \
+										and next_state[self.feature_indices["customer_satisfaction"]] <= n_m[self.models[selected_model].feature_indices["customer_satisfaction"]]:
+											selected_par = var[3]
+											break
+
+							if next_state[self.feature_indices["m"+str(selected_model)+"_s"+str(selected_par)]] != 0:
+								new_outcomes.add((1.0, out[1], out[2]))
+
+							# if start_modified_state[self.models[selected_model].feature_indices["customer_satisfaction"]] > \
+							# 	start_state[self.feature_indices["customer_satisfaction"]] and start_state[self.feature_indices["Qm1_s2168023255"]] == 1:
+							# 	print ("start state: ", start_state, start_modified_state)
+							# 	print ("next state: ", next_state, next_modified_state)
+
+			new_outcomes_tpl = []
+			cost = None
+			if len(new_outcomes) == 0:
+				new_outcomes_tpl = outcomes
+			elif len(new_outcomes) == 1:
+				new_outcomes_tpl.append((1.0,out[1],out[2],self.is_goal_state(out[1]), 1, False))
+			else:
+				cost = UNRELIABLE_PARAMETER_COST*len(new_outcomes)
+				for out in new_outcomes:		
+					new_outcomes_tpl.append((1.0/len(new_outcomes),out[1],cost + out[2],self.is_goal_state(out[1]), 1, False))
+			
+			return new_outcomes_tpl
+		else:
+			return outcomes
+
+	def compute_observation_cost (self, action, outcomes, modified):
+		if not modified:
+			return outcomes
+		elif self.models is None:
 			return outcomes
 		else:
-			# set_trace()
-			cost = -1.0
 			new_outcomes = []
-			for (n_state,prob) in self.modified_transition_function[start_state_index][action.id]:
-				new_outcomes.append((self.epsilon, n_state, cost, False, 1, False))
-
-			len_non_zero_elements = len(outcomes)
-			epsilon = self.epsilon * len(self.modified_transition_function[start_state_index][action.id])
 			for out in outcomes:
-				prob = out[0] - epsilon/len_non_zero_elements
-				new_outcomes.append((prob,out[1],out[2],out[3],out[4],out[5]))
-			
+				obs_cost = self.simulate_observation_cost (out[1], action, modified=True)
+				if obs_cost == 0:
+					new_outcomes.append(out)
+				else:
+					# if self.num_step == 3:
+					# 	set_trace()
+					new_outcomes.append((out[0],out[1],out[2]+obs_cost,out[3],out[4],out[5]))
+
 		return new_outcomes

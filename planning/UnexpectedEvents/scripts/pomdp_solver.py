@@ -4,13 +4,11 @@ from copy import deepcopy
 from time import sleep
 import math
 from pomdp_client import *
+from goal_pomdp_solver import Belief
 
 from draw_env import *
 print_status = False
 
-class Belief:
-	def __init__(self, initial_belief):
-		self.prob = initial_belief
 
 class POMDPSolver:
 	def __init__(self, env, initial_belief, random = None):
@@ -312,3 +310,4 @@ class POMDPSolver:
 			print ("**********************************")
 			# set_trace()
 		return reward, tree_size, int(np.round(exp_time)), int(immediate_time), leaf_beliefs
+

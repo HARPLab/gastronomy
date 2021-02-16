@@ -17,12 +17,13 @@ from plot_all import Plot_All
 from tabulate import tabulate
 
 from draw_env import *
-from pomdp_solver import *
+# from pomdp_solver import *
+from goal_pomdp_solver import *
 from pomdp_client_complex import *
 from pomdp_client_simple import *
 from pomdp_agent import *
-from multi_ind_pomdp_solver import *
-from pomdp_hierarchical import *
+# from multi_ind_pomdp_solver import *
+from multi_ind_goal_pomdp_solver import *
 
 
 print_status = True
@@ -36,7 +37,8 @@ class POMDPTasks():
 	def __init__(self, restaurant, tasks, robot, seed, random, reset_random, horizon, greedy, simple, model, no_op, run_on_cobot, hybrid, deterministic, hybrid_3T, shani_baseline, hierarchical_baseline):
 		global print_status
 		# print("seed: ", random.get_state()[1][0])
-
+		horizon = 300
+		self.tasks =[tasks[0]]
 		# self.test_folder = '../tests_new_env/'
 		self.test_folder = '../tests/'
 		self.run_on_cobot = run_on_cobot
@@ -46,12 +48,12 @@ class POMDPTasks():
 			import rospy
 			rospy.init_node('task', anonymous=True)
 		
-		self.gamma = 0.95
+		self.gamma = 0.99
 		self.seed = seed
 		self.restaurant = restaurant
 		self.random = random
 		
-		self.tasks = tasks
+		# self.tasks = tasks
 		self.robot = robot
 		self.num_random_executions = 10 # was 100
 		print ("num executions: ", self.num_random_executions)
@@ -147,7 +149,7 @@ class POMDPTasks():
 
 					beliefs.append(initial_belief)
 
-					self.pomdp_solvers.append(POMDPSolver(pomdp_task,initial_belief,random))
+					self.pomdp_solvers.append(GoalPOMDPSolver(pomdp_task,initial_belief,random))
 					count += 1
 
 
@@ -157,15 +159,28 @@ class POMDPTasks():
 				print ("multiple ind POMDP: ", self.multi_ind_pomdp)
 				self.agent_pomdp = AgentPOMDP(self.pomdp_tasks, self.pomdp_solvers, self.tasks, self.robot, random)
 				
-				if self.hierarchical_baseline:
-					self.agent_hpomdp = AgentHPOMDP(self.pomdp_tasks, self.pomdp_solvers, self.tasks, self.robot, random, self.horizon, self.gamma, self.run_on_cobot)
-					self.agent_hpomdp_solver = MultiIndPOMDPSolver(self.agent_hpomdp,beliefs,random)
-					# self.agent_hpomdp_solver = POMDPSolver(self.agent_hpomdp,self.agent_hpomdp.get_belief(beliefs),random)
+				self.agent_pomdp_solver = MultiIndGoalPOMDPSolver(self.agent_pomdp,beliefs,random)
 
-				if not self.multi_ind_pomdp:
-					self.agent_pomdp_solver = POMDPSolver(self.agent_pomdp,self.agent_pomdp.get_belief(beliefs),random)
-				else:
-					self.agent_pomdp_solver = MultiIndPOMDPSolver(self.agent_pomdp,beliefs,random)
+				# while True:
+				# 	min_Q, min_a, min_time, Q_a, tree_size, time_steps, _ = self.pomdp_solvers[0].run_RTDP_bel(self.pomdp_solvers[0].belief,300,300,one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
+				# 	solver_prob = self.pomdp_solvers[0].belief.prob
+				# 	state_str = "---------------- initial belief POMDP " + str(0) + ": " + str(self.pomdp_tasks[0].get_state_tuple(self.pomdp_solvers[0].belief.prob[0][1]))
+				# 	for p in solver_prob:
+				# 		st = self.pomdp_tasks[0].get_state_tuple(p[1])			
+				# 		state_str += ", " + str(st[self.pomdp_tasks[0].feature_indices['customer_satisfaction']]) + "-" + \
+				# 		str(st[self.pomdp_tasks[0].feature_indices['current_request']]) + ":" + str(round(p[0],2))
+				# 	print (state_str)
+
+				# 	new_state_index, obs, reward, terminal, debug_info, position = self.pomdp_tasks[0].step(min_a,start_state=None,simulate=False, robot=self.run_on_cobot, selected_pomdp=True)
+				# 	self.pomdp_solvers[0].update_current_belief(min_a,obs,all_poss_actions=True, horizon=None)
+					# set_trace()
+				# min_Q, min_a, min_time, Q_a, tree_size, time_steps, _ = self.agent_pomdp_solver.run_RTDP_bel(None,horizon,max_horizon,one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=True)
+
+				# if print_status:
+				# 	for e in range(len(self.tasks)):
+				# 		print ("reward, selected action: ",(min_Q,min_a[e]), Q_a)
+				# set_trace()
+
 
 				step = 0
 				self.step = step
@@ -213,112 +228,10 @@ class POMDPTasks():
 						print ("-------------------------------------------------------------------")
 						print ("--- STEP --- " + str(step)+": ")
 
-					if self.agentpomdp_vs_greedy:
-						start_states = np.zeros(len(self.tasks),dtype=int)
-						
-						for st in range(len(self.tasks)):
-							start_states[st] = deepcopy(self.pomdp_tasks[st].state)
-							# print (start_states[st])
-							# print (self.pomdp_solvers[st].belief.prob, self.pomdp_tasks[st].get_state_tuple(self.pomdp_solvers[st].belief.prob[0][1]))
-
-						all_terminal_other, position_other, sat_other, unsat_other, t_rew_other, t_b_rew_other, t_sat_other, t_unsat_other, action_other, obss_other, obs_index_other, max_Q_other, tree_s_other, dur_other, max_pomdp_other = \
-						self.execute_episode(terminal_prev,not self.greedy, self.hierarchical_baseline, simulate_step=True, no_op=self.no_op, start_states=start_states)
-
-						if print_status:
-							print ("belief reward: ", t_b_rew_other)
-
-
-						all_terminal, position, sat, unsat, t_rew, t_b_rew, t_sat, t_unsat, action, obss, obs_index, max_Q, tree_s, dur, max_pomdp = self.execute_episode(terminal_prev,self.greedy, self.hierarchical_baseline, simulate_step=False, no_op=self.no_op)
-						self.current_pomdp = max_pomdp
-
-						if print_status:
-							print ("belief reward: ", t_b_rew)
-							if action != action_other:
-								set_trace()
-
-						if action != action_other:
-							total_reward_other[num_steps] = t_rew_other
-							total_belief_reward_other[num_steps] = t_b_rew_other
-							total_max_Q_other[num_steps] = max_Q_other
-							satisfaction_other[num_steps] = sat_other
-							unsatisfaction_other[num_steps] = unsat_other
-							tree_size_other[num_steps] = tree_s_other
-							duration_other[num_steps] = dur_other
-						else:
-							total_reward_other[num_steps] = t_rew
-							total_belief_reward_other[num_steps] = t_b_rew_other
-							total_max_Q_other[num_steps] = max_Q_other
-							satisfaction_other[num_steps] = sat
-							unsatisfaction_other[num_steps] = unsat
-							tree_size_other[num_steps] = tree_s_other
-							duration_other[num_steps] = dur_other
-
-
-						# this update is because if we just simulate the optimal agent model and not actually execute it, the agent model does not get updated
-						# this does not handle unexpected observations
-						if self.greedy:
-							if not self.multi_ind_pomdp:
-								self.agent_pomdp_solver.update_current_belief(self.agent_pomdp.actions[action,:],obss,all_poss_actions=True, horizon=None)
-
-							# print (self.agent_pomdp_solver.beliefs)
-							# for b in self.agent_pomdp_solver.beliefs:
-							# 	print (b.prob)
-					elif self.hybrid_vs_greedy:
-						start_states = np.zeros(len(self.tasks),dtype=int)
-						
-						for st in range(len(self.tasks)):
-							start_states[st] = deepcopy(self.pomdp_tasks[st].state)
-							
-						self.greedy_hybrid = False
-						all_terminal_other, position_other, sat_other, unsat_other, t_rew_other, t_b_rew_other, t_sat_other, t_unsat_other, action_other, obss_other, obs_index_other, max_Q_other, tree_s_other, dur_other, max_pomdp_other = \
-						self.execute_episode(terminal_prev,self.greedy, self.hierarchical_baseline, simulate_step=True, no_op=self.no_op, start_states=start_states)
-						self.greedy_hybrid = True
-
-						if print_status:
-							print ("belief reward: ", t_b_rew_other)
-
-
-						all_terminal, position, sat, unsat, t_rew, t_b_rew, t_sat, t_unsat, action, obss, obs_index, max_Q, tree_s, dur, max_pomdp = self.execute_episode(terminal_prev,self.greedy, self.hierarchical_baseline, simulate_step=False, no_op=self.no_op)
-						self.current_pomdp = max_pomdp
-
-						if print_status:
-							print ("belief reward: ", t_b_rew)
-							if action != action_other:
-								print ("--- STEP --- " + str(step)+": ")
-								print ("action: ", self.agent_pomdp.actions[action,max_pomdp].name)
-								print ("action other: ", self.agent_pomdp.actions[action_other,max_pomdp_other].name)
-								set_trace()
-
-						if action != action_other:
-							total_reward_other[num_steps] = t_rew_other
-							total_belief_reward_other[num_steps] = t_b_rew_other
-							total_max_Q_other[num_steps] = max_Q_other
-							satisfaction_other[num_steps] = sat_other
-							unsatisfaction_other[num_steps] = unsat_other
-							tree_size_other[num_steps] = tree_s_other
-							duration_other[num_steps] = dur_other
-						else:
-							total_reward_other[num_steps] = t_rew
-							total_belief_reward_other[num_steps] = t_b_rew_other
-							total_max_Q_other[num_steps] = max_Q_other
-							satisfaction_other[num_steps] = sat
-							unsatisfaction_other[num_steps] = unsat
-							tree_size_other[num_steps] = tree_s_other
-							duration_other[num_steps] = dur_other
-
-
-						# this update is because if we just simulate the optimal agent model and not actually execute it, the agent model does not get updated
-						# this does not handle unexpected observations
-						if self.greedy:
-							if not self.multi_ind_pomdp:
-								self.agent_pomdp_solver.update_current_belief(action,obs_index,all_poss_actions=True, horizon=None)
-							else:
-								self.agent_pomdp_solver.update_current_belief(self.agent_pomdp.actions[action,:],obss,all_poss_actions=True, horizon=None)
-
-					else:
-						all_terminal, position, sat, unsat, t_rew, t_b_rew, t_sat, t_unsat, action, obss, obs_index, max_Q, tree_s, dur, max_pomdp = \
-						self.execute_episode(terminal_prev,self.greedy, self.hierarchical_baseline,simulate_step=False, no_op=self.no_op)
-						self.current_pomdp = max_pomdp
+					
+					all_terminal, position, sat, unsat, t_rew, t_b_rew, t_sat, t_unsat, action, obss, obs_index, max_Q, tree_s, dur, max_pomdp = \
+					self.execute_episode(terminal_prev,self.greedy, self.hierarchical_baseline,simulate_step=False, no_op=self.no_op)
+					self.current_pomdp = max_pomdp
 
 					total_reward[num_steps] = t_rew
 					total_belief_reward[num_steps] = t_b_rew
@@ -349,6 +262,9 @@ class POMDPTasks():
 						break
 					step += 1
 					self.step = step
+					for p in self.pomdp_tasks:
+						p.num_step = self.step
+					self.agent_pomdp_solver.num_step = self.step
 					# sleep(1)
 
 					# print ("Step: ", num_steps)
@@ -430,14 +346,8 @@ class POMDPTasks():
 		tree_size = 0
 		planning_time = 0
 		start_time = time.clock() 
-		if not hierarchical:
-			if greedy:			
-				pomdp_task, max_pomdp, action, max_Q, tree_size, time_step = self.greedy_selection_of_individual_pomdps(self.horizon, no_op)
-			else:
-				pomdp_task, max_pomdp, action, max_Q, tree_size, time_step = self.optimal_agent_pomdp(self.horizon, self.pomdp_tasks, self.agent_pomdp, self.agent_pomdp_solver)	
-		else:
-			pomdp_task, max_pomdp, action, max_Q, tree_size, time_step = self.hierarchical_agent_pomdp(self.horizon, self.pomdp_tasks, self.agent_hpomdp, self.agent_hpomdp_solver, no_op)	
-
+		pomdp_task, max_pomdp, action, max_Q, tree_size, time_step = self.optimal_agent_pomdp(self.horizon, self.pomdp_tasks, self.agent_pomdp, self.agent_pomdp_solver)	
+		
 		end_time = time.clock()	
 		planning_time += end_time - start_time
 
@@ -454,22 +364,8 @@ class POMDPTasks():
 		total_unsatisfaction = 0
 		position = None
 
-		if greedy:
-			beliefs = []
-			for i in range(len(self.pomdp_solvers)):
-				beliefs.append(self.pomdp_solvers[i].belief)
-			# set_trace()
-			rew_out, tree_s, exp_time,_,_ = self.agent_pomdp_solver.compute_Q (beliefs=beliefs, actions=self.agent_pomdp.actions[action,:], horizon=time_step, max_horizon=time_step, one_action=True, gamma=self.gamma, tree_s=1, all_poss_actions=True)
-			total_belief_reward += rew_out
-		elif not greedy:
-			if not self.multi_ind_pomdp:
-				rew_out, tree_s, exp_time,_,_ = self.agent_pomdp_solver.compute_Q (belief=self.agent_pomdp_solver.belief, action=action, horizon=time_step, max_horizon=time_step, one_action=True, gamma=self.gamma, tree_s=1, all_poss_actions=True)
-				total_belief_reward += rew_out
-			else:
-				# set_trace()
-				# print ("pomdp solver multi", self.agent_pomdp_solver.beliefs[0].prob, self.agent_pomdp_solver.beliefs[1].prob)
-				rew_out, tree_s, exp_time,_,_ = self.agent_pomdp_solver.compute_Q (beliefs=self.agent_pomdp_solver.beliefs, actions=self.agent_pomdp.actions[action,:], horizon=time_step, max_horizon=time_step, one_action=True, gamma=self.gamma, tree_s=1,all_poss_actions=True)
-				total_belief_reward += rew_out
+		# rew_out, exp_time = self.agent_pomdp_solver.run_RTDP_bel_Q (beliefs=self.agent_pomdp_solver.beliefs, actions=self.agent_pomdp.actions[action,:], horizon=time_step, max_horizon=time_step, one_action=True, gamma=self.gamma, tree_s=1,all_poss_actions=True)
+		# total_belief_reward += rew_out
 
 		sorted_list_pomdps = list(range(len(self.pomdp_solvers)))
 		sorted_list_pomdps.remove(max_pomdp)
@@ -481,63 +377,50 @@ class POMDPTasks():
 		for i in sorted_list_pomdps:
 			if print_status or print_status_short:
 				solver_prob = self.pomdp_solvers[i].belief.prob
-				state_str = "-- initial belief POMDP " + str(i) + ": " + str(self.pomdp_tasks[i].get_state_tuple(self.pomdp_solvers[i].belief.prob[0][1]))
+				# state_str = "-- initial belief POMDP " + str(i) + ": " + str(self.pomdp_tasks[i].get_state_tuple(self.pomdp_solvers[i].belief.prob[0][1]))
+				state_str = "-- initial belief: "
 				for p in solver_prob:
-					st = self.pomdp_tasks[i].get_state_tuple(p[1])			
-					state_str += ", " + str(st[self.pomdp_tasks[i].feature_indices['customer_satisfaction']]) + "-" + \
-					str(st[self.pomdp_tasks[i].feature_indices['current_request']]) + ":" + str(round(p[0],2))
+					state_str += "(" + str(p[0]) + "," + str(self.pomdp_tasks[i].get_state_tuple(p[1])) + ")"
+
+				# for p in solver_prob:
+				# 	st = self.pomdp_tasks[i].get_state_tuple(p[1])			
+				# 	state_str += ", " + str(st[self.pomdp_tasks[i].feature_indices['customer_satisfaction']]) + "-" + \
+				# 	str(st[self.pomdp_tasks[i].feature_indices['current_request']]) + ":" + str(round(p[0],2))
 				print (state_str)
 
-			if not simulate_step:
-				new_state_index, obs, reward, terminal, debug_info, position = self.pomdp_tasks[i].step(self.agent_pomdp.actions[action,i],start_state=None,simulate=False, robot=self.run_on_cobot, selected_pomdp=(i == max_pomdp))
-			else:
-				new_state_index, obs, reward, terminal, debug_info, position = self.pomdp_tasks[i].step(self.agent_pomdp.actions[action,i],start_state=start_states[i],simulate=True, robot=self.run_on_cobot)
+			new_state_index, obs, reward, terminal, debug_info, position = self.pomdp_tasks[i].step(self.agent_pomdp.actions[action,i],start_state=None,simulate=False, robot=self.run_on_cobot, selected_pomdp=(i == max_pomdp))
 
 			all_terminal = all_terminal and terminal
-			new_state = self.pomdp_tasks[i].get_state_tuple(new_state_index)
-
 
 			if not simulate_step:
 				terminal_prev[i] = terminal
 
 			obss.insert(i,obs) # indices
 			obss_tuple.insert(i,self.pomdp_tasks[i].get_observation_tuple(obs))
-			new_state = self.pomdp_tasks[i].get_state_tuple(new_state_index)
 
 			pomdp_solver = self.pomdp_solvers[i]			
 			
 			if not simulate_step:
 				if pomdp_solver.compute_1_over_eta (pomdp_solver.belief.prob, self.agent_pomdp.actions[action,i], obs, all_poss_actions=True,horizon=None) == 0:
 					unexpected_observation = True
+					if self.step > 3:
+						pomdp_solver.compute_1_over_eta (pomdp_solver.belief.prob, self.agent_pomdp.actions[action,i], obs, all_poss_actions=True,horizon=None)
+						set_trace()
 					# set_trace()
 					print ("UNEXPECTED EVENT DETECTEDED")
 				else:
 					unexpected_observation = False
 
 				if not unexpected_observation: ##  and not self.mismatch
-					start_time = time.clock() 
 					pomdp_solver.update_current_belief(self.agent_pomdp.actions[action,i],obs,all_poss_actions=True, horizon=None)
-
-					# if
-					# self.pomdp_tasks[i].back_to_original_model(self.agent_pomdp)
-					
-					end_time = time.clock()	
-					if greedy:
-						planning_time += end_time - start_time
 
 				elif unexpected_observation:
 					new_belief = self.pomdp_tasks[i].adapt_pomdp(pomdp_solver, self.agent_pomdp, pomdp_solver.belief, self.agent_pomdp.actions[action,i], obs)
-					# new_belief = self.pomdp_tasks[i].reset_belief(self.pomdp_tasks[i].get_observation_tuple(obs), self.agent_pomdp.actions[action,i], pomdp_solver.belief)
-					# set_trace()
 					pomdp_solver.reset(new_belief)
 					unexpected_observations = True
 					self.mismatch = True
-				# elif not unexpected_observation and self.mismatch:
-				# 	new_belief = self.pomdp_tasks[i].reset_belief(self.pomdp_tasks[i].get_observation_tuple(obs), self.agent_pomdp.actions[action,i], pomdp_solver.belief, self.agent_pomdp)
-				# 	pomdp_solver.reset(new_belief)
-				# 	unexpected_observations = True
 
-				new_beliefs.append(pomdp_solver.get_belief())
+				new_beliefs.append(deepcopy(pomdp_solver.get_belief()))
 
 
 		for i in range(len(self.pomdp_solvers)):
@@ -547,40 +430,27 @@ class POMDPTasks():
 		# set_trace()
 		obs_index = None
 		
-		if not greedy:
-			if not simulate_step: 
-				if not unexpected_observations:
-					start_time = time.clock() 				
-					if not self.multi_ind_pomdp:
-						obs_index = self.agent_pomdp.get_observation_index(observations)
-						self.agent_pomdp_solver.update_current_belief(action,obs_index,all_poss_actions=True, horizon=None)
-					else:
-						self.agent_pomdp_solver.update_current_belief(self.agent_pomdp.actions[action,:],obss,all_poss_actions=True, horizon=None)
-					end_time = time.clock()	
-					planning_time += end_time - start_time
+		if not unexpected_observations:
+			state_str = "-- updated belief agent: "			
+			self.agent_pomdp_solver.update_current_belief(self.agent_pomdp.actions[action,:],obss,all_poss_actions=True, horizon=None)
+			for solver_prob in self.agent_pomdp_solver.beliefs:
+				for p in solver_prob.prob:
+					state_str += "(" + str(p[0]) + "," + str(self.pomdp_tasks[0].get_state_tuple(p[1])) + ")"
+				print ("\n")
+			print (state_str)
 
-					if hierarchical:
-						start_time = time.clock() 
-						beliefs = []
-
-						# for b in self.agent_pomdp_solver.beliefs:
-						# 	beliefs.append(b.prob)
-						# self.agent_hpomdp_solver.belief.prob = self.agent_hpomdp.get_belief(beliefs)
-
-						self.agent_hpomdp_solver.beliefs = self.agent_pomdp_solver.beliefs
-						end_time = time.clock()	
-						planning_time += end_time - start_time
-				else:
-					self.agent_pomdp_solver.reset(new_beliefs) 
+		else:
+			self.agent_pomdp_solver.reset(new_beliefs) 
 
 		if print_status:
 			for i in range(len(self.pomdp_solvers)):			
 				solver_prob = self.pomdp_solvers[i].belief.prob
-				state_str = "-- updated belief: " + str(self.pomdp_tasks[i].get_state_tuple(solver_prob[0][1]))
+				state_str = "-- updated belief: "
 				for p in solver_prob:
-					st = self.pomdp_tasks[i].get_state_tuple(p[1])			
-					state_str += ", " + str(st[self.pomdp_tasks[i].feature_indices['customer_satisfaction']]) + "-" + str(st[self.pomdp_tasks[i].feature_indices['current_request']]) + ":" + str(round(p[0],2))
+					state_str += "(" + str(p[0]) + "," + str(self.pomdp_tasks[i].get_state_tuple(p[1])) + ")"
 				print (state_str)
+				if state_str == "-- updated belief: ":
+					set_trace()
 
 		return all_terminal, position, satisfaction, unsatisfaction, total_reward, total_belief_reward, total_satisfaction, total_unsatisfaction, action, obss, obs_index, max_Q, tree_size, planning_time, max_pomdp
 		
@@ -698,12 +568,13 @@ class POMDPTasks():
 	def optimal_agent_pomdp (self, horizon, pomdp_tasks, agent_pomdp, agent_pomdp_solver):
 		global print_status
 		action_values = np.zeros(horizon*2)
-		Q, a, max_time, Q_a, tree_size, exp_time_steps,_ = agent_pomdp_solver.compute_V(None,horizon,horizon,one_action=False,gamma=self.gamma,tree_s=1,all_poss_actions=True)
+		# Q, a, max_time, Q_a, tree_size, exp_time_steps,_ = agent_pomdp_solver.compute_V(None,horizon,horizon,one_action=False,gamma=self.gamma,tree_s=1,all_poss_actions=True)
+		Q, a, min_time, Q_a, tree_size, exp_time_steps, _ = self.agent_pomdp_solver.run_RTDP_bel(None,horizon,horizon,one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=True)
 
 		if print_status:
 			print ("robot: ", (self.robot.get_feature('x').value, self.robot.get_feature('y').value))
 			print ("reward, selected action: ",(Q,a))
-			print ("action values: ", action_values)
+			# print ("action values: ", action_values)
 
 			# if horizon == 2:
 			# 	print (self.agent_pomdp.actions_names[int(action_values[0])], " , ", \
@@ -716,66 +587,26 @@ class POMDPTasks():
 			print (Q_a)
 
 		
-		max_action = np.argmax(Q_a) ## was a
-		max_Q = Q
-		max_pomdp, action = agent_pomdp.get_pomdp(max_action, self.current_pomdp)
-		pomdp_task = pomdp_tasks[max_pomdp]	
-		max_time_step = exp_time_steps[max_action][0]
+		min_action = np.argmin(Q_a) ## was a
+		min_Q = Q
+		min_pomdp, action = agent_pomdp.get_pomdp(min_action, self.current_pomdp)
+		pomdp_task = pomdp_tasks[min_pomdp]	
+		min_time_step = exp_time_steps[min_action][0]
 		
 		if print_status:
-			print ("time steps: ", max_time_step)
-			print ("POMDP ", max_pomdp)
+			print ("time steps: ", min_time_step)
+			print ("POMDP ", min_pomdp)
 			print ("final selected action: ",action.name)
 			if len(pomdp_tasks) == len(self.pomdp_tasks):
-				if self.LB is not None and self.LB - max_Q > 0.001:
+				if self.LB is not None and self.LB - min_Q > 0.001:
 					print ("WRONG LB")
 					set_trace()
-				if (self.UB is not None and self.UB - max_Q < -0.001) and not self.shani_baseline:
+				if (self.UB is not None and self.UB - min_Q < -0.001) and not self.shani_baseline:
 					print ("WRONG UB")
 					set_trace()
 
-		return pomdp_task, max_pomdp, max_action, max_Q, tree_size, max_time_step
+		return pomdp_task, min_pomdp, min_action, min_Q, tree_size, min_time_step
 
-
-	def hierarchical_agent_pomdp (self, horizon, pomdp_tasks, agent_pomdp, agent_pomdp_solver, no_op):
-		global print_status
-		Q, a, max_time, Q_a, tree_size, exp_time_steps,_ = agent_pomdp_solver.compute_V(None,horizon,horizon,one_action=False, \
-			gamma=self.gamma,tree_s=1, all_poss_actions=not no_op, HPOMDP=True)
-
-		action = a[0]
-		pomdp_solver = self.pomdp_solvers[action.id]
-		max_pomdp = action.id
-		pomdp_task = pomdp_tasks[max_pomdp]	
-		max_time_step = max_time
-
-		if print_status:
-			print ("---")
-			print ("robot: ", (self.robot.get_feature('x').value, self.robot.get_feature('y').value))
-			print ("reward, selected pomdp: ",(Q, action.name))
-			print ("-- Hierarchical Max Q --")
-			print (Q_a)
-
-		max_Q, max_a, max_time, Q_a, tree_s, exp_time_steps,_ = pomdp_solver.compute_V(pomdp_solver.belief,horizon,horizon,one_action=False, \
-			gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
-		action = max_a		
-
-		for i in range(self.agent_pomdp.actions.shape[0]):
-			if self.agent_pomdp.actions[i,max_pomdp] == action:
-				max_action = i
-				break
-	
-		if print_status:
-			print ("reward, selected action: ",(max_Q, max_a))
-			print ("-- One task Max Q --")
-			print (Q_a)
-		
-		if print_status:
-			print ("time steps: ", max_time_step)
-			print ("POMDP ", max_pomdp)
-			print ("final selected action: ",action.id, " - ", action.name)
-			print ("---")
-
-		return pomdp_task, max_pomdp, max_action, max_Q, tree_size, max_time_step
 
 
 	def solve_ind_pomdps (self, selected_pomdp_solvers, horizon, no_op):
@@ -795,21 +626,22 @@ class POMDPTasks():
 				print ("initial belief: ", self.pomdp_tasks[i].get_state_tuple(pomdp_solver.belief.prob[0][1]))
 				print ("robot: ", (self.robot.get_feature('x').value, self.robot.get_feature('y').value))
 			
-			max_Q, max_a, max_time, Q_a, tree_s, exp_time_steps,_ = pomdp_solver.compute_V(pomdp_solver.belief,horizon,horizon,one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
+			# max_Q, max_a, max_time, Q_a, tree_s, exp_time_steps,_ = pomdp_solver.compute_V(pomdp_solver.belief,horizon,horizon,one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
+			min_Q, min_a, min_time, Q_a, tree_size, exp_time_steps, _ = pomdp_solver.run_RTDP_bel(pomdp_solver.belief,horizon,horizon,one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
 			all_actions_time_steps.append(exp_time_steps)
-			Vs[i] = max_Q
+			Vs[i] = min_Q
 			tree_size += tree_s
 			pomdp_Q.append(Q_a)
-			upper_bound += max_Q
+			upper_bound += min_Q
 			if print_status:
-				print ("reward, selected action: ",(max_Q,max_a), Q_a)
+				print ("reward, selected action: ",(min_Q,min_a), Q_a)
 				# set_trace()
 
 		return upper_bound, tree_size, all_actions_time_steps, Vs, pomdp_Q
 
 	def compute_lower_bound (self, selected_pomdp_solvers, Vs, V_traj, horizon, no_op):
 		global print_status
-		lower_bound = -np.Inf
+		lower_bound = np.Inf
 		for i in selected_pomdp_solvers:
 			min_Vs = 0
 			min_V_str = ""
@@ -831,13 +663,12 @@ class POMDPTasks():
 
 		return lower_bound
 
-	def compute_max_Qs_greedily (self, selected_pomdp_solvers, pomdp_Q, V_traj, all_actions_time_steps, horizon, no_op):
+	def compute_min_Qs_greedily (self, selected_pomdp_solvers, pomdp_Q, V_traj, all_actions_time_steps, horizon, no_op):
 		# selected pomdps are the ones that we want to sum
 		global print_status
-		max_Qs = np.zeros((self.agent_pomdp.nA,1))
-		max_time_steps = np.zeros((self.agent_pomdp.nA,1))	
+		min_Qs = np.zeros((self.agent_pomdp.nA,1))
+		min_time_steps = np.zeros((self.agent_pomdp.nA,1))	
 		count = 0
-		tree_size = 0
 
 		if print_status:
 			print ("--- POMDPs: ", selected_pomdp_solvers) 
@@ -852,18 +683,17 @@ class POMDPTasks():
 					if i in selected_pomdp_solvers:
 						ind_act = self.agent_pomdp.actions[action,i]					
 						if not no_op or (ind_act in self.pomdp_tasks[i].valid_actions):
-							max_Qs[count] += pomdp_Q[i][ind_act.id][0]
-							max_time_steps[count] =  all_actions_time_steps[i][ind_act.id]
+							min_Qs[count] += pomdp_Q[i][ind_act.id][0]
+							min_time_steps[count] =  all_actions_time_steps[i][ind_act.id]
 							# if print_status:
 							# 	print_str += str(pomdp_Q[i][ind_act.id][0]) + " "
 						else:
 							try:
-								rew, tree_s, exp_time,_,_ = pomdp_solver.compute_Q (self.pomdp_solvers[i].belief, action=ind_act, horizon=horizon, max_horizon=horizon, \
+								rew, exp_time = pomdp_solver.run_RTDP_bel_Q (self.pomdp_solvers[i].belief, action=ind_act, horizon=horizon, max_horizon=horizon, \
 									one_action=False, gamma=self.gamma, tree_s=0,all_poss_actions=not no_op)
 							except:
 								set_trace()	
-							tree_size += tree_s
-							max_Qs[count] += rew
+							min_Qs[count] += rew
 							# if print_status:
 							# 	print_str += str(rew) + " "
 					else:
@@ -871,11 +701,11 @@ class POMDPTasks():
 						# 	one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
 						# tree_size += tree_s
 						rew = V_traj[i]
-						max_Qs[count] += rew
+						min_Qs[count] += rew
 						# if print_status:
 						# 	print_str += str(rew) + " "
 				else:
-					max_Qs[count] = -np.Inf
+					min_Qs[count] = np.Inf
 					# if print_status:
 					# 	print_str += "-inf "
 
@@ -884,87 +714,16 @@ class POMDPTasks():
 
 			count += 1
 
-		return max_Qs, tree_size, max_time_steps
+		return min_Qs, tree_size, min_time_steps
 
-	def select_max_Q_pomdp (self, max_Qs, max_time_steps):
-		max_action = np.argmax(max_Qs)
-		max_time_step = max_time_steps[max_action][0]
-		max_Q = np.max(max_Qs)
-		max_pomdp, pomdp_action = self.agent_pomdp.get_pomdp(max_action, self.current_pomdp)
-		pomdp_task = self.pomdp_tasks[max_pomdp]	
+	def select_min_Q_pomdp (self, min_Qs, min_time_steps):
+		min_action = np.argmin(min_Qs)
+		min_time_step = min_time_steps[min_action][0]
+		min_Q = np.min(min_Qs)
+		min_pomdp, pomdp_action = self.agent_pomdp.get_pomdp(min_action, self.current_pomdp)
+		pomdp_task = self.pomdp_tasks[min_pomdp]	
 
-		return pomdp_task, max_pomdp, max_action, max_Q, max_time_step, pomdp_action
-
-
-	def select_best_pomdps (self, max_Qs, max_time_steps):
-		global print_status
-		pomdp_task, max_pomdp, max_action, max_Q, max_time_step, pomdp_action = self.select_max_Q_pomdp (max_Qs, max_time_steps)
-
-		if print_status:
-			print ("-- Greedy Max Q --")
-			print (max_Qs)
-
-			print ("Selected POMDP ", max_pomdp)
-			print ("selected action: ",pomdp_action, self.agent_pomdp.actions_names[max_action])
-			print ("time steps: ", max_time_step)
-
-		if self.greedy_hybrid:
-			max_2nd_Qs = deepcopy(max_Qs)
-			max_2nd_pomdp = max_pomdp
-			max_2nd_action = max_action
-			count = 0
-			while max_pomdp == max_2nd_pomdp and count < len(self.agent_pomdp.actions)+1:
-				max_2nd_Qs[max_2nd_action] = -np.Inf
-				max_2nd_pomdp, max_2nd_pomdp, max_2nd_action, max_2nd_Q, max_time_step, pomdp_action_2nd = self.select_max_Q_pomdp (max_2nd_Qs, max_time_steps)
-				# print ("max_2nd_action", max_2nd_action)
-				if max_2nd_action == self.agent_pomdp.all_no_ops['1'][max_2nd_pomdp]:
-					set_trace()
-					max_2nd_pomdp = max_pomdp
-				count += 1
-
-			if count == len(self.agent_pomdp.actions)+1:
-				# set_trace()
-				if max_pomdp == 0:
-					max_2nd_pomdp = len(self.pomdp_tasks) - 1
-				else:
-					max_2nd_pomdp = max_pomdp - 1
-			
-			selected_pomdps = [max_pomdp,max_2nd_pomdp]
-
-
-			if print_status:
-
-				print ("---------------------------------")
-				print ("Selected 2nd best POMDP ", max_2nd_pomdp)
-				
-
-			# if self.hybrid_num_tables == 3 and len(self.pomdp_tasks) >= 3:
-			# 	max_3nd_Qs = deepcopy(max_2nd_Qs)
-			# 	max_3nd_pomdp = max_2nd_pomdp
-			# 	max_3nd_action = max_2nd_action
-			# 	count = 0
-			# 	while (max_pomdp == max_3nd_pomdp or max_2nd_pomdp == max_3nd_pomdp) and count < len(self.agent_pomdp.actions)+1:
-			# 		max_3nd_Qs[max_3nd_action] = -np.Inf
-			# 		_, max_3nd_pomdp, max_3nd_action, max_3nd_Qs, max_time_step, pomdp_action_3nd = self.select_max_Q_pomdp (max_3nd_Qs, max_time_steps)
-
-			# 		if max_3nd_action == self.agent_pomdp.all_no_op:
-			# 			max_3nd_pomdp = max_pomdp
-			# 		count += 1
-
-			# 	if count == len(self.agent_pomdp.actions)+1:
-			# 		pomdps_indices = list(range(0,len(self.pomdp_tasks)))
-			# 		pomdps_indices.remove(max_pomdp)
-			# 		pomdps_indices.remove(max_2nd_pomdp)
-			# 		max_3nd_pomdp = pomdps_indices[0]
-			# 		# set_trace()
-
-			# 	selected_pomdps.append(max_3nd_pomdp)
-
-			# 	if print_status:
-			# 		print ("---------------------------------")
-			# 		print ("Selected 3rd best POMDP ", max_3nd_pomdp)
-
-		return selected_pomdps
+		return pomdp_task, min_pomdp, min_action, min_Q, min_time_step, pomdp_action
 
 	def run_optimal_planner_on_k(self, selected_pomdps, horizon):
 		sub_pomdp_tasks = [self.pomdp_tasks[i] for i in selected_pomdps]
@@ -980,339 +739,20 @@ class POMDPTasks():
 			print ("** selected POMDPS: ", selected_pomdps)
 		self.current_pomdp = None
 		sub_agent_pomdp = AgentPOMDP(sub_pomdp_tasks, sub_pomdp_solvers, sub_tasks, self.robot, self.random)
-		sub_agent_pomdp_solver = MultiIndPOMDPSolver(sub_agent_pomdp,beliefs,self.random)
+		sub_agent_pomdp_solver = MultiIndGoalPOMDPSolver(sub_agent_pomdp,beliefs,self.random)
 		# sub_agent_pomdp_solver = POMDPSolver(sub_agent_pomdp,sub_agent_pomdp.get_beliefs(beliefs),self.random)
 
 		if print_status:
 			print (beliefs)
 			print ("======= running optimal planner on " + str(len(selected_pomdps)) + " POMDP =======")
-		sub_pomdp_task, sub_max_pomdp, sub_action, sub_max_Q, sub_tree_size, sub_time_step = \
+		sub_pomdp_task, sub_min_pomdp, sub_action, sub_min_Q, sub_tree_size, sub_time_step = \
 			self.optimal_agent_pomdp (horizon, sub_pomdp_tasks, sub_agent_pomdp, sub_agent_pomdp_solver)
-		max_time_step = sub_time_step
+		min_time_step = sub_time_step
 		if print_status:
 			print ("==================================================")
-			print ("time steps: ", max_time_step)
+			print ("time steps: ", min_time_step)
 
-		return sub_agent_pomdp, sub_pomdp_task, sub_max_pomdp, sub_action, sub_max_Q, sub_tree_size, sub_time_step
-
-
-	def greedy_selection_of_individual_pomdps (self, horizon, no_op=False):
-		global print_status
-		tree_size = 0			
-		
-		# upper_bound, tree_s, all_actions_time_steps, Vs, pomdp_Q = self.solve_ind_pomdps (list(range(0,len(self.pomdp_solvers))), horizon, no_op)
-		# lower_bound = self.compute_lower_bound(list(range(0,len(self.pomdp_solvers))), Vs, horizon, no_op)
-		# tree_size += tree_s
-
-		# max_Qs, tree_s, max_time_steps = self.compute_max_Qs_greedily (list(range(0,len(self.pomdp_solvers))), pomdp_Q, all_actions_time_steps, horizon, no_op)
-		# tree_size += tree_s
-		# max_Q = np.max(max_Qs)
-
-		# rew, tree_s, exp_time,_,_ = pomdp_solver.compute_Q_one_action(pomdp_solver.belief,self.pomdp_tasks[i].no_action,horizon,horizon, \
-						# 	one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
-						# tree_size += tree_s
-
-		V_traj = np.full((len(self.pomdp_solvers),),-np.Inf)
-		for j in range(0,len(self.pomdp_solvers)):
-			pomdp_solver = self.pomdp_solvers[j]
-			min_V,_,_,_,_ = pomdp_solver.compute_Q_one_action(pomdp_solver.belief,self.pomdp_tasks[j].noop_actions['1'],horizon,horizon,\
-				one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
-			V_traj[j] = min_V
-
-
-		if not self.greedy_hybrid:
-			if print_status:
-				print(" ----- greedy -----")
-			lower_bound = -np.Inf
-			upper_bound, tree_s, all_actions_time_steps, Vs, pomdp_Q = self.solve_ind_pomdps (list(range(0,len(self.pomdp_solvers))), horizon, no_op)
-			tree_size += tree_s
-
-			max_Qs, tree_s, max_time_steps = self.compute_max_Qs_greedily (list(range(0,len(self.pomdp_solvers))), pomdp_Q, V_traj, all_actions_time_steps, horizon, no_op)
-			tree_size += tree_s
-			max_Q = np.max(max_Qs)
-
-			pomdp_task, max_pomdp, max_action, max_Q, max_time_step, pomdp_action = self.select_max_Q_pomdp (max_Qs, max_time_steps)
-
-			if print_status:
-				print (max_Qs)
-				print(" ----- greedy-end -----")
-			
-		elif self.greedy_hybrid:
-
-			if self.shani_baseline:
-				if print_status:
-					print(" ----- shani_baseline -----")
-
-				pomdp_pairs = []
-				upper_bound = np.Inf
-				lower_bound = -np.Inf
-
-				if self.hybrid_3T: ## and len(self.pomdp_tasks) >= 3:
-					if len(self.pomdp_tasks) == 3:
-						pomdp_pairs.append((0,1,2,None))
-					elif len(self.pomdp_tasks) > 3:
-						pair = None
-						for i in range(len(self.pomdp_solvers)):
-							count = 0
-							while (pair is None or pair in pomdp_pairs or len(set(pair_invs) & set(pomdp_pairs)) > 0 \
-								or pair[0] == pair[1] or pair[1] == pair[2] or pair[0] == pair[2]):
-								j = self.random.randint(0,len(self.pomdp_solvers),size=1)[0]
-								k = self.random.randint(0,len(self.pomdp_solvers),size=1)[0]
-								pair_invs = []
-								pair = (i,j,k,None)
-								pair_invs.append((i,k,j,None))
-								pair_invs.append((j,i,k,None))
-								pair_invs.append((j,k,i,None))							
-								pair_invs.append((k,i,j,None))
-								pair_invs.append((k,j,i,None))
-
-								count += 1
-								# print (pair, pomdp_pairs)
-								if count > len(self.pomdp_solvers)*2:
-									pair = None
-									break
-
-							if pair is not None:
-								pomdp_pairs.append(pair)
-
-						if len(pomdp_pairs) != len(self.pomdp_solvers):
-							while len(pomdp_pairs) != len(self.pomdp_solvers):
-								i = self.random.randint(0,len(self.pomdp_solvers),size=1)[0]
-								j = self.random.randint(0,len(self.pomdp_solvers),size=1)[0]
-								k = self.random.randint(0,len(self.pomdp_solvers),size=1)[0]
-								pair_invs = []
-								pair = (i,j,k,None)
-								pair_invs.append((i,k,j,None))
-								pair_invs.append((j,i,k,None))
-								pair_invs.append((j,k,i,None))							
-								pair_invs.append((k,i,j,None))
-								pair_invs.append((k,j,i,None))
-
-								if not (pair is None or pair in pomdp_pairs or len(set(pair_invs) & set(pomdp_pairs)) > 0 \
-									or pair[0] == pair[1] or pair[1] == pair[2] or pair[0] == pair[2]):
-									pomdp_pairs.append(pair)
-									# print (pomdp_pairs)
-									# set_trace()		
-					else:
-						print ("less than 3 tasks!")
-						set_trace()
-				else:
-					pair = None
-					if len(self.pomdp_tasks) != 2:
-						for i in range(len(self.pomdp_solvers)):
-							count = 0
-							while (pair is None or pair in pomdp_pairs or pair_inv in pomdp_pairs or pair[0] == pair[1]):
-								j = self.random.randint(0,len(self.pomdp_solvers),size=1)[0]
-								pair = (i,j,None)
-								pair_inv = (j,i,None)
-
-								count += 1
-								# print (pair, pomdp_pairs)
-								if count > len(self.pomdp_solvers)*2:
-									pair = None
-									break
-
-							if pair is not None:
-								pomdp_pairs.append(pair)
-
-						if len(pomdp_pairs) != len(self.pomdp_solvers):
-							while len(pomdp_pairs) != len(self.pomdp_solvers):
-								i = self.random.randint(0,len(self.pomdp_solvers),size=1)[0]
-								j = self.random.randint(0,len(self.pomdp_solvers),size=1)[0]
-								pair = (i,j,None)
-								pair_inv = (j,i,None)
-
-								if not (pair is None or pair in pomdp_pairs or pair_inv in pomdp_pairs or pair[0] == pair[1]):
-									pomdp_pairs.append(pair)
-									# print (pomdp_pairs)
-									# set_trace()		
-					else:
-						pomdp_pairs.append((0,1,None))
-
-				if print_status:
-					print (pomdp_pairs)
-
-			else:
-				if print_status:
-					print(" ----- hybrid_optimal -----")
-					
-				pomdp_pairs = []
-
-				if self.hybrid_3T: ## and len(self.pomdp_tasks) >= 3:
-					if len(self.pomdp_tasks) == 3:
-						pomdp_pairs.append((0,1,2,None))
-					elif len(self.pomdp_tasks) > 3:
-						upper_bound, tree_s, all_actions_time_steps, Vs, pomdp_Q = self.solve_ind_pomdps (list(range(0,len(self.pomdp_solvers))), horizon, no_op)
-						lower_bound = self.compute_lower_bound(list(range(0,len(self.pomdp_solvers))), Vs, V_traj, horizon, no_op)
-						tree_size += tree_s
-
-						# upper_bound = min(np.max(max_Qs),upper_bound)						
-						max_pomdp_pairs = -np.Inf
-						max_pomdp_pairs_index = None
-						for i in range(len(self.pomdp_solvers)):
-							for j in range(len(self.pomdp_solvers)):
-								if j > i:
-									for k in range(len(self.pomdp_solvers)):
-										if k > j:
-											max_Qs_3_pomdps, tree_s_temp, max_time_steps_temp = self.compute_max_Qs_greedily ([i,j,k], pomdp_Q, V_traj, all_actions_time_steps, horizon, no_op)
-											if print_status:
-												print ("POMDP ", i, j, k, ":", np.max(max_Qs_3_pomdps), " ---- ", lower_bound)
-											max_Q_3_pomdps = np.max(max_Qs_3_pomdps)
-											if max_Q_3_pomdps - lower_bound > -0.001:
-												pomdp_pairs.append((i,j,k,max_Q_3_pomdps))
-												max_pomdp_pairs = max(max_Q_3_pomdps,max_pomdp_pairs)
-												if max_pomdp_pairs == max_Q_3_pomdps:
-													max_pomdp_pairs_index = len(pomdp_pairs)-1
-
-						if print_status:
-							print (pomdp_pairs, max_pomdp_pairs_index, max_pomdp_pairs, upper_bound)
-
-						upper_bound = min(max_pomdp_pairs,upper_bound)
-
-						if max_pomdp_pairs_index is None:
-							set_trace()
-
-					else:
-						print ("less than 3 tasks!")
-						set_trace()
-				else:
-					if len(self.pomdp_tasks) != 2:
-						upper_bound, tree_s, all_actions_time_steps, Vs, pomdp_Q = self.solve_ind_pomdps (list(range(0,len(self.pomdp_solvers))), horizon, no_op)
-						lower_bound = self.compute_lower_bound(list(range(0,len(self.pomdp_solvers))), Vs, V_traj, horizon, no_op)
-						tree_size += tree_s
-
-						# upper_bound = min(np.max(max_Qs),upper_bound)						
-						max_pomdp_pairs = -np.Inf
-						max_pomdp_pairs_index = None
-						for i in range(len(self.pomdp_solvers)):
-							for j in range(len(self.pomdp_solvers)):
-								if j > i:
-									max_Qs_2_pomdps, tree_s_temp, max_time_steps_temp = self.compute_max_Qs_greedily ([i,j], pomdp_Q, V_traj, all_actions_time_steps, horizon, no_op)
-									if print_status:
-										print ("POMDP ", i, j, ":", np.max(max_Qs_2_pomdps), " ---- ", lower_bound)
-									max_Q_2_pomdps = np.max(max_Qs_2_pomdps)
-									if max_Q_2_pomdps - lower_bound > -0.001:
-										pomdp_pairs.append((i,j,max_Q_2_pomdps))
-										max_pomdp_pairs = max(max_Q_2_pomdps,max_pomdp_pairs)
-										if max_pomdp_pairs == max_Q_2_pomdps:
-											max_pomdp_pairs_index = len(pomdp_pairs)-1
-
-						if print_status:
-							print (pomdp_pairs, max_pomdp_pairs_index, max_pomdp_pairs, upper_bound)
-
-						upper_bound = min(max_pomdp_pairs,upper_bound)
-
-						if max_pomdp_pairs_index is None:
-							set_trace()
-
-					else:
-						upper_bound = np.Inf
-						lower_bound = -np.Inf
-						pomdp_pairs.append((0,1,None))
-
-
-					
-					if print_status:
-						print ("new UB: ",upper_bound)
-						self.UB = upper_bound
-						self.LB = lower_bound
-
-					selected_pomdps = []					
-
-			final_sub_pomdp_task = None
-			final_sub_max_pomdp = None
-			final_sub_action = None
-			final_sub_max_Q = None
-			final_sub_tree_size = None
-			final_sub_time_step = None
-			final_selected_pomdps = None
-			final_sub_agent_pomdp = None
-
-			# set_trace()
-
-			for pair in pomdp_pairs:
-				selected_pomdps = []
-				for p in range(0,len(pair)-1):
-					selected_pomdps.append(pair[p])
-
-				sub_agent_pomdp, sub_pomdp_task, sub_max_pomdp, sub_action, sub_max_Q, sub_tree_size, sub_time_step = \
-				self.run_optimal_planner_on_k(selected_pomdps, horizon)
-
-				for o in range(len(self.pomdp_solvers)):
-					if o not in selected_pomdps:
-						pomdp_solver = self.pomdp_solvers[o]
-						rew, tree_s, exp_time,_,_ = pomdp_solver.compute_Q_one_action(pomdp_solver.belief,self.pomdp_tasks[o].noop_actions['1'],horizon,horizon, \
-							one_action=False,gamma=self.gamma, tree_s=1, all_poss_actions=not no_op)
-						sub_tree_size += tree_s
-						sub_max_Q += rew
-
-				if print_status:
-					print ("considered pairs: ", pair,sub_max_Q)
-				if final_sub_max_Q is None or final_sub_max_Q < sub_max_Q:
-					final_sub_pomdp_task = sub_pomdp_task
-					final_sub_max_pomdp = sub_max_pomdp
-					final_sub_action = sub_action
-					final_sub_max_Q = sub_max_Q
-					final_sub_tree_size = sub_tree_size
-					final_sub_time_step = sub_time_step
-					final_selected_pomdps = selected_pomdps
-					final_sub_agent_pomdp = sub_agent_pomdp
-			
-
-			if print_status:
-				print ("-- selected pomdps: ",final_selected_pomdps, "max_Q: ",final_sub_max_Q)
-
-			upper_bound = final_sub_max_Q
-			max_Q = final_sub_max_Q
-			pomdp_task = final_sub_pomdp_task
-			max_time_step = final_sub_time_step
-			max_pomdp = final_selected_pomdps[final_sub_max_pomdp]
-			
-			max_action = final_sub_agent_pomdp.actions[final_sub_action,final_sub_max_pomdp]
-			# set_trace()
-			if not max_action.type == Action_Type.NAVIGATION:			
-				action = np.array(self.agent_pomdp.all_no_ops[str(max_action.time_steps)])	
-				action[max_pomdp] = max_action
-
-				for i in range(self.agent_pomdp.actions.shape[0]):
-					if np.array_equal(self.agent_pomdp.actions[i],action):
-						max_action = i
-						break
-
-			else:
-				action = np.full((len(self.agent_pomdp.pomdp_tasks),),max_action)
-				for i in range(self.agent_pomdp.actions.shape[0]):
-					if self.agent_pomdp.actions[i][max_pomdp] == max_action:
-						# set_trace()
-						max_action = i
-						break
-
-
-			
-
-			tree_size += final_sub_tree_size
-
-			if print_status or print_status_short:
-
-				print ("Sub POMDP ", final_selected_pomdps[final_sub_max_pomdp])
-				print ("Sub final selected action: ", final_sub_agent_pomdp.actions[final_sub_action,final_sub_max_pomdp].id, \
-					final_sub_agent_pomdp.actions[final_sub_action,final_sub_max_pomdp].name)
-				
-				print ("---------------------------------")
-
-				print ("UB: ",upper_bound)
-				print ("LB: ",lower_bound)
-				self.LB = lower_bound
-				self.UB = upper_bound
-				print ("UB - LB: ", upper_bound-lower_bound)
-				
-				if (np.round(upper_bound,3)-np.round(lower_bound,3)) < 0:
-					set_trace()
-			
-
-		print ("max_action", max_action)
-		return pomdp_task, max_pomdp, max_action, max_Q, tree_size, max_time_step
-		
+		return sub_agent_pomdp, sub_pomdp_task, sub_min_pomdp, sub_action, sub_min_Q, sub_tree_size, sub_time_step
 
 
 	def render(self, pomdp_tasks,actions_names, num=None, final_rew=None, exec_num=0, render_belief=False):

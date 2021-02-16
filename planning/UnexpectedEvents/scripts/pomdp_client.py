@@ -19,6 +19,8 @@ import json
 
 GLOBAL_TIME = 0
 print_status = False
+ACTION_COST = 2
+UNRELIABLE_PARAMETER_COST = 100
 
 class History():
 	def __init__(self, pre, mismatch, post):
@@ -40,19 +42,28 @@ class Observation_Type(IntEnum):
 class Action():
 	def __init__(self, id, name, pomdp, a_type, time_steps, kitchen=False, state=None):
 		self.id = id
+		self.cost = ACTION_COST + 2
 		self.name = name
 		self.pomdp = pomdp
 		self.time_steps = time_steps
 		self.type = a_type
 		self.kitchen = kitchen
-		if a_type == Action_Type.CLARIFICATION:
-			self.cost = -2
+		self.state = {}
+		# if a_type != Action_Type.NAVIGATION:
+		# 	self.cost = ACTION_COST
+		if self.id == 1:
+			self.cost = ACTION_COST
+		elif a_type == Action_Type.CLARIFICATION:
+			# self.cost = -2
+			self.cost = ACTION_COST + 5
 			self.state = state
 
 	def set_id (self, id):
 		self.id = id
 	def print(self):
+		print ("*****")
 		print ("id: ", self.id, " name: ", self.name, " pomdp: ", self.pomdp, " time_steps: ", self.time_steps, " type: ", self.type)
+		print (self.state)
 
 
 class ClientPOMDP(gym.Env):
@@ -81,6 +92,12 @@ class ClientPOMDP(gym.Env):
 		self.transition_function = {}
 		self.modified_transition_function = {}
 		self.modified_observation_function = {}
+		self.models = None
+		self.model_pars = None
+		self.goal_pomdp = True
+
+		self.num_step = 0
+
 		if run_on_robot:
 			try:
 				self.executeAction = rospy.Publisher('CobotExecuteAction4Table', String, queue_size=10)
@@ -154,6 +171,10 @@ class ClientPOMDP(gym.Env):
 		reward = -dist/3 ## this was -dist
 		steps = math.ceil(max(math.ceil(dist)/4,1))
 
+		if self.goal_pomdp:
+			reward = -reward
+			if dist == 0.0:
+				reward = np.Inf
 		return goal, reward, steps
 
 	def simulate_go_to_kitchen_action (self,action,position):
@@ -163,7 +184,10 @@ class ClientPOMDP(gym.Env):
 		dist = self.distance(position,goal)
 		reward = -dist/3 ## this was -dist
 		steps = math.ceil(max(math.ceil(dist)/4,1))
-
+		if self.goal_pomdp:
+			reward = -reward
+			if dist == 0.0:
+				reward = np.Inf
 		return goal, reward, steps
 
 	def get_uniform_belief (self, state):
@@ -182,6 +206,7 @@ class ClientPOMDP(gym.Env):
 		food_picked_up = 0
 		time_since_hand_raise = 0
 		hand_raise = 1
+		have_bread = 0
 		random = False
 		if random:
 			# "cooking_status","time_since_food_ready","water","food","time_since_served","hand_raise","time_since_hand_raise","current_request","customer_satisfaction"
@@ -210,22 +235,22 @@ class ClientPOMDP(gym.Env):
 			# food = 0
 			# water = 0
 			# current_req = 1
-			if self.task.table.id == 2:
-				current_req = 5
+			if self.task.table.id == 0:
+				current_req = 3
 				cooking_status = 0
 				food = 0
-				water = 3
+				water = 0
 				food_picked_up = 0
-				time_since_hand_raise = 4
+				time_since_hand_raise = 0
 
-				# current_req = 4
+				# current_req = 5
 				# cooking_status = 0
-				# food = 2
-				# water = 0
+				# food = 0
+				# water = 3
 				# food_picked_up = 0
 				# time_since_hand_raise = 4
 
-				customer_satisfaction = self.reset_random.randint(0,self.state_space[self.feature_indices['customer_satisfaction']][1]+1) 
+				customer_satisfaction = 4#self.reset_random.randint(0,self.state_space[self.feature_indices['customer_satisfaction']][1]+1) 
 			else:
 				customer_satisfaction = 1
 				current_req = 8
@@ -237,9 +262,9 @@ class ClientPOMDP(gym.Env):
 				# customer_satisfaction = self.reset_random.randint(0,self.state_space[self.feature_indices['customer_satisfaction']][1]+1) 
 
 		if not self.KITCHEN:
-			state = [cooking_status,0,water,food,0,hand_raise,time_since_hand_raise,current_req,customer_satisfaction,self.robot.get_feature('x').value,self.robot.get_feature('y').value] # 
+			state = [have_bread, cooking_status,0,water,food,0,hand_raise,time_since_hand_raise,current_req,customer_satisfaction,self.robot.get_feature('x').value,self.robot.get_feature('y').value] # 
 		else:
-			state = [cooking_status,0,water,food,0,hand_raise,time_since_hand_raise,food_picked_up,current_req,customer_satisfaction,self.robot.get_feature('x').value,self.robot.get_feature('y').value] # 
+			state = [have_bread, cooking_status,0,water,food,0,hand_raise,time_since_hand_raise,food_picked_up,current_req,customer_satisfaction,self.robot.get_feature('x').value,self.robot.get_feature('y').value] # 
 
 		# if not self.KITCHEN:
 		# 	state = [0,cooking_status,0,water,food,0,hand_raise,time_since_hand_raise,current_req,customer_satisfaction,self.robot.get_feature('x').value,self.robot.get_feature('y').value] # 
@@ -353,6 +378,8 @@ class ClientPOMDP(gym.Env):
 		action.print()
 		unexpected_observation = False
 		if simulate or not robot:
+			print ("does not work")
+			set_trace()
 			observation = []
 			obs_type = Observation_Type.ORIGINAL
 			outcomes, steps = self.simulate_action(start_state_index,action,all_poss_actions=True,horizon=None)
@@ -385,10 +412,13 @@ class ClientPOMDP(gym.Env):
 			try:
 				new_state = {}
 				outcome = self.get_state_tuple(outcomes[0][1])
+
 				for f in self.obs_feature_indices[Observation_Type.ORIGINAL].keys():
 					if f in self.feature_indices:
 						new_state[f] = int(outcome[self.feature_indices[f]])
 
+				emotion = self.get_dominant_emotion(int(outcome[self.feature_indices['customer_satisfaction']]), action)
+				new_state['emotion'] = emotion
 				new_state['table'] = self.task.table.id
 				self.state_data = None
 				try:
@@ -399,25 +429,25 @@ class ClientPOMDP(gym.Env):
 				except KeyboardInterrupt:
 					print ("keyboard interrupt")
 
-
+				obs_type = Observation_Type.ORIGINAL
 				if (action.type == Action_Type.CLARIFICATION):
 					# set_trace()
 					observation_tpl = self.get_observation_tuple((Observation_Type.HUMAN_INPUT,0))
-					obs_type = observation_tpl[0]
+					obs_type = Observation_Type.HUMAN_INPUT
 					observation = observation_tpl[1]
 					indices = self.obs_feature_indices[obs_type]
 				else:
 					observation_tpl = self.get_observation_tuple((Observation_Type.ORIGINAL,0))
-					obs_type = observation_tpl[0]
+					obs_type = Observation_Type.ORIGINAL
 					observation = observation_tpl[1]
 					indices = self.obs_feature_indices[obs_type]
 
-				# print (self.state_data,self.feature_indices.keys())
 				for s in self.state_data.keys():
 					if s in indices.keys():
 						observation[indices[s]] = self.state_data[s]
 
 				# set_trace()
+				print (self.state_data,self.feature_indices.keys())
 			except:
 				print ("observation exception: ", "table: ", self.task.table.id)
 				set_trace()
@@ -425,7 +455,126 @@ class ClientPOMDP(gym.Env):
 
 		return outcomes, steps, (obs_type,observation)
 
-	def simulate_observation (self, next_state_index, action): ## here
+	
+	def simulate_observation_cost (self, next_state_index, action, modified=True): ## here
+		if not modified:
+			return 0
+
+		if action.type != Action_Type.CLARIFICATION:
+			obs_type = Observation_Type.ORIGINAL
+		else:
+			obs_type = Observation_Type.HUMAN_INPUT
+		
+		if next_state_index in self.observation_function_costs[obs_type].keys() and action in self.observation_function_costs[obs_type][next_state_index].keys():
+			return self.observation_function_costs[obs_type][next_state_index][action]
+
+		next_state = self.get_state_tuple(next_state_index)	
+		sat = next_state[self.feature_indices['customer_satisfaction']]
+		########################
+		modified_observation_function = self.modified_observation_function
+		old_state_index = next_state_index
+		selected_model = -1
+		if self.models is not None:
+			for model in range(0,len(self.models)):
+				if next_state[self.feature_indices["m"+str(model)]] == 1:
+					modified_observation_function = self.models[model].modified_observation_function
+					for i in range(len(next_state)-3,self.feature_indices["m"+str(0)]-1,-1):
+						next_state.pop(i)
+					# 	print (next_state)
+					# set_trace()
+					old_state = deepcopy(next_state)
+					old_state_index = self.models[model].get_state_index(next_state)
+					selected_model = model
+					# print ("next_state: ", next_state)
+					break
+		###########################
+		if selected_model == -1:
+			return 0
+
+		next_state = self.get_state_tuple(next_state_index)	
+		if obs_type == Observation_Type.ORIGINAL:
+			for index in reversed(self.unobs_feature_indices[obs_type]):
+				next_state.pop(index)
+
+			next_state.insert(self.obs_feature_indices[obs_type]["explicit"],0)
+			next_state.insert(self.obs_feature_indices[obs_type]["emotion"],0)
+
+			obs = self.get_emotion(obs_type, next_state, sat, action)
+			
+
+		elif obs_type == Observation_Type.HUMAN_INPUT:
+			answer = self.get_clarification(action, next_state)
+			# set_trace()
+			for index in reversed(self.unobs_feature_indices[obs_type]):
+				next_state.pop(index)
+			index = self.obs_feature_indices[obs_type]["answer"]
+
+			next_state.insert(self.obs_feature_indices[obs_type]["explicit"],0)
+			next_state.insert(self.obs_feature_indices[obs_type]["emotion"],0)
+			next_state.insert(index,answer)
+			
+			obs = self.get_emotion(obs_type, next_state, sat, action)
+
+		obs_cost = 0
+		if selected_model != -1:
+			temp_new_obs = set()
+			new_outcomes = []
+			# print (modified_observation_function)
+			for om in modified_observation_function.keys():
+				if action.id in modified_observation_function[om].keys():
+					for (ot,pr) in obs:
+						# print (om, action.id, ot, pr)
+						modified_observation = self.models[selected_model].get_observation_tuple(om)
+						observation = self.get_observation_tuple(ot)[1]						
+						next_state = self.get_state_tuple(next_state_index)
+						next_modified_state = old_state
+						# print (next_state, next_modified_state)
+						# set_trace()
+						if next_state[self.feature_indices["customer_satisfaction"]] <= next_modified_state[self.models[selected_model].feature_indices["customer_satisfaction"]]:							
+							##################
+							selected_par = None
+							# set_trace()
+							for var in self.model_pars["m"+str(selected_model)]:
+								if var[0] == "observation":
+									if var[2] == action.id:
+										obs_tpl = self.models[selected_model].get_observation_tuple(var[1])
+										n_m = self.models[selected_model].get_state_tuple(var[3])
+										# set_trace()
+										if observation[self.obs_feature_indices[obs_type]["emotion"]] == obs_tpl[1][self.models[selected_model].obs_feature_indices[obs_type]["emotion"]] and \
+										next_state[self.feature_indices["customer_satisfaction"]] <= n_m[self.models[selected_model].feature_indices["customer_satisfaction"]]:
+											selected_par = var[1][1]
+											break
+										# else: # not sure about this part
+										# 	set_trace()
+
+							if selected_par is not None and next_state[self.feature_indices["m"+str(selected_model)+"_o"+str(selected_par)]] != 0:
+								temp_new_obs.add(ot)
+							if selected_par is None:
+								temp_new_obs.add(ot)	
+							#################
+							observation[self.obs_feature_indices[obs_type]["emotion"]] = modified_observation[1][self.models[selected_model].obs_feature_indices[obs_type]["emotion"]]
+							temp_new_obs.add(self.get_observation_index((obs_type,observation)))
+			# set_trace()
+			if len(temp_new_obs) == 0 or len(temp_new_obs) == 1:
+				obs_cost = 0
+			else:
+				obs_cost = UNRELIABLE_PARAMETER_COST * len(temp_new_obs)
+
+			# if (self.num_step is not None and self.num_step >= 4):
+			# 	if obs_cost != 0:
+			# 		set_trace()
+
+			if next_state_index not in self.observation_function_costs[obs_type].keys():
+				self.observation_function_costs[obs_type][next_state_index] = {} 
+
+			if action not in self.observation_function_costs[obs_type][next_state_index].keys():
+				self.observation_function_costs[obs_type][next_state_index][action] = obs_cost
+			else:
+				self.observation_function_costs[obs_type][next_state_index][action].update(obs_cost)
+
+		return obs_cost
+
+	def simulate_observation (self, next_state_index, action, modified=True): ## here
 		if action.type != Action_Type.CLARIFICATION:
 			obs_type = Observation_Type.ORIGINAL
 			# set_trace()
@@ -437,14 +586,37 @@ class ClientPOMDP(gym.Env):
 			return self.observation_function[obs_type][next_state_index][action]
 
 		next_state = self.get_state_tuple(next_state_index)	
+		sat = next_state[self.feature_indices['customer_satisfaction']]
 
+		########################
+		modified_observation_function = self.modified_observation_function
+		old_state_index = next_state_index
+		selected_model = -1
+		if self.models is not None:
+			for model in range(0,len(self.models)):
+				if next_state[self.feature_indices["m"+str(model)]] == 1:
+					modified_observation_function = self.models[model].modified_observation_function
+					for i in range(len(next_state)-3,self.feature_indices["m"+str(0)]-1,-1):
+						next_state.pop(i)
+					# 	print (next_state)
+					# set_trace()
+					old_state = deepcopy(next_state)
+					old_state_index = self.models[model].get_state_index(next_state)
+					selected_model = model
+					# print ("next_state: ", next_state)
+					break
+		###########################
+
+		next_state = self.get_state_tuple(next_state_index)	
 		if obs_type == Observation_Type.ORIGINAL:
 			for index in reversed(self.unobs_feature_indices[obs_type]):
 				next_state.pop(index)
 
 			next_state.insert(self.obs_feature_indices[obs_type]["explicit"],0)
+			next_state.insert(self.obs_feature_indices[obs_type]["emotion"],0)
 
-			obs = {(self.get_observation_index((obs_type,next_state)),1.0)}
+			obs = self.get_emotion(obs_type, next_state, sat, action)
+			
 
 		elif obs_type == Observation_Type.HUMAN_INPUT:
 			answer = self.get_clarification(action, next_state)
@@ -454,25 +626,84 @@ class ClientPOMDP(gym.Env):
 			index = self.obs_feature_indices[obs_type]["answer"]
 
 			next_state.insert(self.obs_feature_indices[obs_type]["explicit"],0)
+			next_state.insert(self.obs_feature_indices[obs_type]["emotion"],0)
 			next_state.insert(index,answer)
-			obs = {(self.get_observation_index((obs_type,next_state)),1.0)}
+			
+			obs = self.get_emotion(obs_type, next_state, sat, action)
 
-		if len(self.modified_observation_function) > 0:
 
-			n_obs = []
-			new_obs = set()
-			for mo in self.modified_observation_function.keys():
-				if action.id in self.modified_observation_function[mo]:
-					for (n_state,prob) in self.modified_observation_function[mo][action.id]:
-						if n_state == next_state_index:
-							n_obs.append(mo)
-			for no in n_obs:
-				new_obs.add((no,self.epsilon))
-
-			new_obs.add((list(obs)[0][0],1.0-len(n_obs)*self.epsilon))
-			# set_trace()
-		else:
+		new_obs = obs
+		if not modified:
 			new_obs = obs
+		else:
+			if selected_model == -1 and len(modified_observation_function) > 0: #############?????????????? fix later
+				n_obs = []
+				new_obs = set()
+				for mo in modified_observation_function.keys():
+					if action.id in modified_observation_function[mo]:
+						for (n_state,prob) in modified_observation_function[mo][action.id]:
+							if n_state == old_state_index:
+								n_obs.append(mo)
+
+				non_zero_obs = len(n_obs)+len(obs)
+				for new_o in n_obs:
+					new_obs.add((new_o,1.0/non_zero_obs))
+
+				for prev_o in obs:
+					new_obs.add((prev_o,1.0/non_zero_obs))
+			elif selected_model != -1:
+				temp_new_obs = set()
+				new_outcomes = []
+				# print (modified_observation_function)
+				for om in modified_observation_function.keys():
+					if action.id in modified_observation_function[om].keys():
+						for (ot,pr) in obs:
+							# print (om, action.id, ot, pr)
+							modified_observation = self.models[selected_model].get_observation_tuple(om)
+							observation = self.get_observation_tuple(ot)[1]						
+							next_state = self.get_state_tuple(next_state_index)
+							next_modified_state = old_state
+							# print (next_state, next_modified_state)
+							# set_trace()
+							if next_state[self.feature_indices["customer_satisfaction"]] <= next_modified_state[self.models[selected_model].feature_indices["customer_satisfaction"]]:							
+								##################
+								selected_par = None
+								# set_trace()
+								for var in self.model_pars["m"+str(selected_model)]:
+									if var[0] == "observation":
+										if var[2] == action.id:
+											obs_tpl = self.models[selected_model].get_observation_tuple(var[1])
+											n_m = self.models[selected_model].get_state_tuple(var[3])
+											# set_trace()
+											if observation[self.obs_feature_indices[obs_type]["emotion"]] == obs_tpl[1][self.models[selected_model].obs_feature_indices[obs_type]["emotion"]] and \
+											next_state[self.feature_indices["customer_satisfaction"]] <= n_m[self.models[selected_model].feature_indices["customer_satisfaction"]]:
+												selected_par = var[1][1]
+												break
+											# else: # not sure about this part
+											# 	set_trace()
+
+								if selected_par is not None and next_state[self.feature_indices["m"+str(selected_model)+"_o"+str(selected_par)]] != 0:
+									temp_new_obs.add(ot)
+								if selected_par is None:
+									temp_new_obs.add(ot)	
+								#################
+								observation[self.obs_feature_indices[obs_type]["emotion"]] = modified_observation[1][self.models[selected_model].obs_feature_indices[obs_type]["emotion"]]
+								temp_new_obs.add(self.get_observation_index((obs_type,observation)))
+
+				# set_trace()
+				# if (self.num_step is not None and self.num_step >= 4):
+				# 	if len(temp_new_obs) != 0:
+				# 		set_trace()
+
+				if len(temp_new_obs) != 0:
+					obs_tpl = set()
+					for out in temp_new_obs:
+						obs_tpl.add((out,1.0/len(temp_new_obs)))
+					new_obs = obs_tpl	
+				else:
+					new_obs = obs
+				# if len(new_obs) != 0:
+				# 	set_trace()			
 
 
 		if next_state_index not in self.observation_function[obs_type].keys():
@@ -486,39 +717,142 @@ class ClientPOMDP(gym.Env):
 		return new_obs
 
 	def get_clarification (self, action, state):
-		if state[self.feature_indices["m" + str(action.state["model_num"])]] == 1:
-			return 1
+		if action.state["cat"] == 1:
+			if state[self.feature_indices["m" + str(action.state["model_num"])]] == 1:
+				return 1
+			else:
+				return 0
+		elif action.state["cat"] == 2:
+			if "observation" in action.state.keys():
+				name = "_o" + str(action.state["observation"][1])
+			elif "start_state" in action.state.keys():
+				name = "_s" + str(action.state["next_state"])
+
+			if state[self.feature_indices["m" + str(action.state["model_num"])]] == 1 and \
+				state[self.feature_indices["m" + str(action.state["model_num"]) + name]] == 1:
+				return 1
+			elif state[self.feature_indices["m" + str(action.state["model_num"])]] == 1 and \
+				state[self.feature_indices["m" + str(action.state["model_num"]) + name]] == 0:
+				return 0
+			elif state[self.feature_indices["m" + str(action.state["model_num"])]] == 0 and \
+				state[self.feature_indices["m" + str(action.state["model_num"]) + name]] == 1:
+				return 1
+			elif state[self.feature_indices["m" + str(action.state["model_num"])]] == 0 and \
+				state[self.feature_indices["m" + str(action.state["model_num"]) + name]] == 0:
+				return 0
+
+
+	def get_emotion (self, obs_type, next_state, sat, action):
+		obs = set()
+		emotion_index = self.obs_feature_indices[obs_type]["emotion"]
+		if (action.id == 2 or action.type == Action_Type.SERVE):
+			if sat == 0:
+				next_state[emotion_index] = 0 # unhappy
+				obs = {(self.get_observation_index((obs_type,next_state)),1.0)}
+			elif sat == 1:
+				# next_state[emotion_index] = 0
+				# obs.add((self.get_observation_index((obs_type,next_state)),0.9))
+				next_state[emotion_index] = 1
+				obs.add((self.get_observation_index((obs_type,next_state)),1.0))
+			elif sat == 2:
+				# next_state[emotion_index] = 0
+				# obs.add((self.get_observation_index((obs_type,next_state)),0.7))
+				next_state[emotion_index] = 1
+				obs.add((self.get_observation_index((obs_type,next_state)),1.0))
+			elif sat == 3:
+				# next_state[emotion_index] = 0
+				# obs.add((self.get_observation_index((obs_type,next_state)),0.3))
+				next_state[emotion_index] = 1
+				obs.add((self.get_observation_index((obs_type,next_state)),0.7))
+				next_state[emotion_index] = 2
+				obs.add((self.get_observation_index((obs_type,next_state)),0.3))
+			elif sat == 4:
+				next_state[emotion_index] = 1
+				obs.add((self.get_observation_index((obs_type,next_state)),0.3))
+				next_state[emotion_index] = 2
+				obs.add((self.get_observation_index((obs_type,next_state)),0.7))
+			elif sat == 5:
+				next_state[emotion_index] = 2 ## happy
+				obs.add((self.get_observation_index((obs_type,next_state)),1.0))
 		else:
-			return 0
+			next_state[emotion_index] = 3 # unknown
+			obs.add((self.get_observation_index((obs_type,next_state)),1.0))
+
+		return obs
+
+	def get_dominant_emotion (self, sat, action):
+		if (action.id == 2 or action.type == Action_Type.SERVE):
+			if sat == 0:
+				return 0
+			elif sat == 1:
+				return 1
+			elif sat == 2:
+				return 1
+			elif sat == 3:
+				return 1
+			elif sat == 4:
+				return 2
+			elif sat == 5:
+				return 2
+		else:
+			return 3
 
 	def get_reward(self,start_state,new_state,high):
-		reward = 0
-		if new_state [self.feature_indices['hand_raise']] == 1:
-			start_sat = start_state [self.feature_indices['customer_satisfaction']]
-			new_sat = new_state [self.feature_indices['customer_satisfaction']]
-			if high:
-				reward = 10.0 * (self.state_space[self.feature_indices['customer_satisfaction']][1]-new_sat) + 10.0
-			else:
-				# for i in range(start_state [self.feature_indices['time_since_hand_raise']]+1, \
-				# 	new_state [self.feature_indices['time_since_hand_raise']]+1):
-				i = min(new_state [self.feature_indices['time_since_hand_raise']],10)
-				if new_sat == 0:
-					reward = -1 * math.pow(2,i)
-				elif new_sat == 1:
-					reward = -1 * math.pow(1.7,i)
-				elif new_sat == 2:
-					reward = -1 * math.pow(1.4,i)
-				elif new_sat > start_sat  and new_sat > 2:
-					reward = 1.0
-		return reward
+		if not self.goal_pomdp:
+			reward = 0
+			if new_state [self.feature_indices['hand_raise']] == 1:
+				start_sat = start_state [self.feature_indices['customer_satisfaction']]
+				new_sat = new_state [self.feature_indices['customer_satisfaction']]
+				if high:
+					reward = 10.0 * (self.state_space[self.feature_indices['customer_satisfaction']][1]-new_sat) + 10.0
+				else:
+					# for i in range(start_state [self.feature_indices['time_since_hand_raise']]+1, \
+					# 	new_state [self.feature_indices['time_since_hand_raise']]+1):
+					i = min(new_state [self.feature_indices['time_since_hand_raise']],10)
+					if new_sat == 0:
+						reward = -1 * math.pow(2,i)
+					elif new_sat == 1:
+						reward = -1 * math.pow(1.7,i)
+					elif new_sat == 2:
+						reward = -1 * math.pow(1.4,i)
+					elif new_sat > start_sat  and new_sat > 2:
+						reward = 1.0 * new_sat ## was 1.0
+			return reward
+		else:
+			cost = 0
+			if new_state [self.feature_indices['hand_raise']] == 1:
+				start_sat = start_state [self.feature_indices['customer_satisfaction']]
+				new_sat = new_state [self.feature_indices['customer_satisfaction']]
+				cost = 5.0 * (self.state_space[self.feature_indices['customer_satisfaction']][1]-new_sat)
+				if high:
+					cost = 2.0 * (self.state_space[self.feature_indices['customer_satisfaction']][1]-new_sat)
+				else:
+					i = min(new_state [self.feature_indices['time_since_hand_raise']],10)
+					if new_sat < start_sat  and new_sat <= 2:
+						if new_sat == 0:
+							cost += math.pow(2,i)
+						elif new_sat == 1:
+							cost += math.pow(1.7,i)
+						elif new_sat == 2:
+							cost += math.pow(1.4,i)	
+					elif new_sat < start_sat and new_sat > 2:
+						cost += math.pow(1.3,i)	
+					elif new_sat == start_sat and new_sat <= 2:
+						cost += math.pow(1.1,i)	
+					elif new_sat == start_sat and new_sat > 2:
+						cost += math.pow(1.05,i)	
+			return cost
 
 	def get_possible_next_states (self, belief_prob, action, all_poss_actions, horizon):
 		possible_states = set()
-		
+		# if horizon is None:
+		# 	print ("get possible next states: ")
 		for (prob,state) in belief_prob:
 			outcomes, steps = self.simulate_action(state,action,all_poss_actions=True,horizon=horizon)
 			for outcome in outcomes:
 				possible_states.add(outcome[1])
+				# if horizon is None:
+				# 	print (self.get_state_tuple(outcome[1]))
 
 		return possible_states
 
@@ -530,7 +864,9 @@ class ClientPOMDP(gym.Env):
 			index = self.obs_feature_indices[obs_type]["answer"]
 			obs_tpl.pop(index)
 
+		obs_tpl.pop(self.obs_feature_indices[obs_type]["emotion"])
 		obs_tpl.pop(self.obs_feature_indices[obs_type]["explicit"])
+
 		for index in (self.unobs_feature_indices[obs_type]):
 			obs_tpl.insert(index,-1)
 
@@ -542,15 +878,11 @@ class ClientPOMDP(gym.Env):
 					if s_i not in self.unobs_feature_indices[obs_type]:
 						state_tpl[s_i] = obs_tpl[s_i]
 				# set_trace()
-				possible_states.add(self.get_state_index(state_tpl))
+				for sat in range(self.state_space[self.feature_indices['customer_satisfaction']][0],self.state_space[self.feature_indices['customer_satisfaction']][1]+1):
+					state_tpl[self.feature_indices["customer_satisfaction"]] = sat
+					possible_states.add(self.get_state_index(state_tpl))
 
-		if len(self.modified_observation_function) > 0:
-			set_trace()
-			if obs_index in self.modified_observation_function.keys():
-				if action in self.modified_observation_function[obs_index].keys():
-					for s in self.modified_observation_function[obs_index][action]:
-						possible_states.append(s)
-
+		### what about the observation function
 		return possible_states
 
 	def get_possible_obss (self, belief_prob,all_poss_actions,horizon): ## here
@@ -584,25 +916,25 @@ class ClientPOMDP(gym.Env):
 
 			st.insert(self.obs_feature_indices[obs_type]["explicit"],0)
 
-			if obs_type == Observation_Type.ORIGINAL:
-				possible_obss.add(self.get_observation_index((obs_type,st)))
+			emotion_index = self.obs_feature_indices[obs_type]["emotion"]
+			st.insert(emotion_index,0)
 
-			elif obs_type == Observation_Type.HUMAN_INPUT: 
-				index = self.obs_feature_indices[obs_type]["answer"]
-				st.insert(index,0)
-				possible_obss.add(self.get_observation_index((obs_type,st)))
-				st[index] = 1
-				possible_obss.add(self.get_observation_index((obs_type,st)))
+			if obs_type == Observation_Type.HUMAN_INPUT: 
+				answer_index = self.obs_feature_indices[obs_type]["answer"]
+				st.insert(answer_index,0)
 
-		if len(self.modified_observation_function) > 0:
-			set_trace()
-			for ps_tpl in possible_states: 
-				for mo in self.modified_observation_function.keys():
-					for action in self.modified_observation_function[mo]:
-						for n_state in self.modified_observation_function[mo][action]:
-							if n_state == ps_tpl[1]:
-								possible_obss.add(mo)
+			for o in range(0,self.observation_space_dim[obs_type][emotion_index]):
+				st[emotion_index] = o
+				if obs_type == Observation_Type.ORIGINAL:
+					possible_obss.add(self.get_observation_index((obs_type,st)))
 
+				elif obs_type == Observation_Type.HUMAN_INPUT: 
+					st[answer_index] = 0
+					possible_obss.add(self.get_observation_index((obs_type,st)))
+					st[answer_index] = 1
+					possible_obss.add(self.get_observation_index((obs_type,st)))
+
+		### what about the observation function
 		return possible_obss
 
 	def add_transition(self, start_state_index, action, next_state_index, epsilon):
@@ -794,8 +1126,10 @@ class ClientPOMDP(gym.Env):
 		possible_next_states_obs = []
 		if update:
 			belief_prob = belief.prob
+		# set_trace()
 		for s_p in self.get_possible_next_states_by_obs(belief.prob, action, obs_index): #############
 			for o_p in self.simulate_observation(s_p,action):
+			
 				# if explicit:
 				# 	st = self.get_state_tuple(s_p)
 				# 	next_req_value = st[self.feature_indices["current_request"]]
@@ -832,7 +1166,7 @@ class ClientPOMDP(gym.Env):
 		sum_pr_uniform = 0
 		possible_next_states_uniform = set()
 		## previous belief state
-		for s in range(len(possible_next_states_state)):
+		'''for s in range(len(possible_next_states_state)):
 			state_index = possible_next_states_state[s][1]
 			st = self.get_state_tuple(outcome[1])
 			for cur_req in range(1,self.state_space[self.feature_indices['current_request']][1]+1):
@@ -868,7 +1202,7 @@ class ClientPOMDP(gym.Env):
 			sum_pr_uniform = len(possible_next_states_uniform)
 			possible_next_states_uniform = list(possible_next_states_uniform)
 			for s in range(len(possible_next_states_uniform)):
-				post.append(((possible_next_states_uniform[s][0])/sum_pr_uniform,possible_next_states_uniform[s][1]))
+				post.append(((possible_next_states_uniform[s][0])/sum_pr_uniform,possible_next_states_uniform[s][1]))'''
 		#########################################################################
 		self.history = History(pre,mismatch,post)
 
@@ -899,17 +1233,41 @@ class ClientPOMDP(gym.Env):
 			req_text += "clean table"
 		return req_text
 
+	def get_satisfaction_text (self, task, st):
+		sat = st[task.feature_indices["customer_satisfaction"]]
+		if sat == 0:
+			sat_text = "very unsatisfied"
+		if sat == 1:
+			sat_text = "unsatisfied"
+		if sat == 2:
+			sat_text = "a bit unsatisfied"
+		if sat == 3:
+			sat_text = "neutral"
+		if sat == 4:
+			sat_text = "satisfied"
+		if sat == 5:
+			sat_text = "very satisfied"
+		return sat_text
+
 	def explain_it (self, task, x, y, o):
 		if x is not None:
 			state = self.get_state_tuple(x)
 			next_state = self.get_state_tuple(y)
-			x_exp = self.get_current_request_text(task, state)
-			y_exp = self.get_current_request_text(task, next_state)
+			x_exp = self.get_satisfaction_text(task, state)
+			y_exp = self.get_satisfaction_text(task, next_state)
 			return x_exp, y_exp
 		elif o is not None:
 			next_state = self.get_state_tuple(y)
-			o_exp = "this"
-			y_exp = self.get_current_request_text(task, next_state)
+			o_sat = self.get_observation_tuple(o)[1][self.obs_feature_indices[Observation_Type.ORIGINAL]["emotion"]]
+			if o_sat == 0:
+				o_exp = "unhappy"
+			if o_sat == 1:
+				o_exp = "neutral"
+			if o_sat == 2:
+				o_exp = "happy"
+			if o_sat == 3:
+				o_exp = "unknown"
+			y_exp = self.get_satisfaction_text(task, next_state)
 			return y_exp, o_exp
 
 	def add_model_transitions (self, valid_pomdp_tasks, hidden_vars_names):
@@ -917,36 +1275,62 @@ class ClientPOMDP(gym.Env):
 		#### ADD ACTIONS
 		model_vars = []
 		self.models = valid_pomdp_tasks
+		self.model_pars = {}
 		len_actions = len(self.actions)
 		clarification_actions = []
 		action_index = 0
+		parameter_vars = {}
+		m_name = ""
 		for task in valid_pomdp_tasks:
+			m_name = "m"+str(action_index)
+			vars_tuples = []
 			if len(task.modified_transition_function) > 0:
+				if m_name not in parameter_vars.keys():
+					parameter_vars[m_name] = []
+
 				x = list(task.modified_transition_function.keys())[0]
 				a = list(task.modified_transition_function[x].keys())[0]
 				y = task.modified_transition_function[x][a][0][0]
 				x_exp, y_exp = self.explain_it(task, x, y, None)
 				clarification_actions.append(Action(None, 'is it possible to go from *' + x_exp + '* to *' + y_exp + '* state with *' + self.actions[a].name + '* action - table '+str(self.task.table.id), self.task.table.id, Action_Type.CLARIFICATION, 1, \
-					state={"start_state":x,"next_state":y,"action":a,"model_num":action_index, "model":task}))
+					state={"start_state":x,"next_state":y,"action":a,"model_num":action_index, "model":task, "cat":1}))
+				outcomes, steps = self.simulate_action(x, self.actions[a], all_poss_actions=False, horizon=None, remaining_time_steps=None, modified=False)
+				for outcome in outcomes:
+					new_state_index = outcome[1]
+					x_exp, y_exp = self.explain_it(task, x, new_state_index, None)
+					clarification_actions.append(Action(None, 'is it still possible to go from *' + x_exp + '* to *' + y_exp + '* state with *' + self.actions[a].name + '* action - table '+str(self.task.table.id), self.task.table.id, Action_Type.CLARIFICATION, 1, \
+					state={"start_state":x,"next_state":new_state_index,"action":a,"model_num":action_index, "model":task, "cat":2}))
+					parameter_vars[m_name].append(m_name+"_s"+str(new_state_index))
+					vars_tuples.append(("state", x, a, new_state_index))
 
 			if len(task.modified_observation_function) > 0:
+				if m_name not in parameter_vars.keys():
+					parameter_vars[m_name] = []
+
 				o = list(task.modified_observation_function.keys())[0]
 				a = list(task.modified_observation_function[o].keys())[0]
 				y = task.modified_observation_function[o][a][0][0]
-				y_exp, o_exp = self.explain_it(task, None, y, o[1])
-				o_exp = "money on table"
+				y_exp, o_exp = self.explain_it(task, None, y, o)
+				# o_exp = "money on table"
 				clarification_actions.append(Action(None, 'is it possible to observe *' + o_exp + '* in *' + y_exp + '* state with *' + self.actions[a].name + '*- table '+str(self.task.table.id), self.task.table.id, Action_Type.CLARIFICATION, 1, \
-					state={"observation":o,"next_state":y,"action":a,"model_num":action_index, "model":task}))
+					state={"observation":o,"next_state":y,"action":a,"model_num":action_index, "model":task, "cat":1}))
+				outcomes = self.simulate_observation (y, self.actions[a], modified=False)
+				for outcome in outcomes:
+					obs_index = outcome[0]
+					y_exp, o_exp = self.explain_it(task, None, y, obs_index)
+					clarification_actions.append(Action(None, 'is it still possible to observe *' + o_exp + '* in *' + y_exp + '* state with *' + self.actions[a].name + '*- table '+str(self.task.table.id), self.task.table.id, Action_Type.CLARIFICATION, 1, \
+					state={"observation":obs_index,"next_state":y,"action":a,"model_num":action_index, "model":task, "cat":2}))
+					parameter_vars[m_name].append(m_name+"_o"+str(obs_index[1]))
+					vars_tuples.append(("observation", obs_index, a, y))
+			
+			self.model_pars[m_name] = vars_tuples
 
-			model_vars.append("m"+str(action_index))
+			model_vars.append(m_name)
 			action_index += 1
 
 		self.set_actions(clarification_actions)
-		# for cl in clarification_actions:
-		# 	self.actions.append(cl)
-		# 	self.valid_actions.append(cl)
 
-		# self.len_clarification_actions = len(clarification_actions)
+		self.len_clarification_actions = len(clarification_actions)
 
 		# self.non_navigation_actions_len = self.non_navigation_actions_len + self.len_clarification_actions
 		# self.nA = len(self.actions)
@@ -967,8 +1351,9 @@ class ClientPOMDP(gym.Env):
 
 		# ############################
 		#### ADD STATES
-		self.set_states(obs_type=Observation_Type.ORIGINAL, hidden_vars_names=hidden_vars_names, model_vars=model_vars)
-		self.set_states(obs_type=Observation_Type.HUMAN_INPUT, hidden_vars_names=hidden_vars_names, model_vars=model_vars)
+		self.set_states(obs_type=Observation_Type.ORIGINAL, hidden_vars_names=hidden_vars_names, model_vars=model_vars, parameter_vars=parameter_vars)
+		self.set_states(obs_type=Observation_Type.HUMAN_INPUT, hidden_vars_names=hidden_vars_names, model_vars=model_vars, parameter_vars=parameter_vars)
+		return parameter_vars
 
 	def get_all_possible_models (self, belief, action, obs):
 		from pomdp_client_complex import ClientPOMDPComplex
@@ -981,13 +1366,12 @@ class ClientPOMDP(gym.Env):
 		if self.history is None:
 			self.create_update_history(obs, action, belief)
 
-		
 		possible_pomdp_tasks = []
 		for m in self.history.mismatch:
 			next_state = m[1]
 			pomdp_task = ClientPOMDPComplex(self.task, self.robot, self.navigation_goals, self.gamma, \
 				self.random, self.reset_random, self.deterministic, self.no_op, self.run_on_robot)
-			pomdp_task.add_observation(obs,action,next_state,self.epsilon)
+			pomdp_task.add_observation(obs, action, next_state, self.epsilon)
 			possible_pomdp_tasks.append(pomdp_task)
 
 		if not explicit:
@@ -996,25 +1380,26 @@ class ClientPOMDP(gym.Env):
 					next_state = m[1]
 					pomdp_task = ClientPOMDPComplex(self.task, self.robot, self.navigation_goals, self.gamma, \
 						self.random, self.reset_random, self.deterministic, self.no_op, self.run_on_robot)
-					pomdp_task.add_transition(cur_state[1],action,next_state,self.epsilon)
+					pomdp_task.add_transition(cur_state[1], action, next_state, self.epsilon)
 					possible_pomdp_tasks.append(pomdp_task)
 
 		valid_pomdp_tasks = []
 		valid_new_beliefs = []
 		for pomdp_task in possible_pomdp_tasks:
 			pomdp_solver = POMDPSolver(pomdp_task,belief)
-			# set_trace()
 			prob = pomdp_solver.compute_1_over_eta (belief.prob, action, obs, all_poss_actions=True,horizon=None)
 			if prob > 0:
 				valid_pomdp_tasks.append(pomdp_task)
 				new_belief = pomdp_solver.update_belief(belief.prob, action, obs, all_poss_actions=True, horizon=None)		
 				valid_new_beliefs.append(new_belief)
 
-		return reversed(valid_pomdp_tasks), reversed(valid_new_beliefs)
+		# print (len(valid_pomdp_tasks),len(valid_new_beliefs))
+		return valid_pomdp_tasks, valid_new_beliefs
 
 	def adapt_pomdp(self, pomdp_solver, agent_pomdp, initial_belief, action, obs):
-		add_variables = ["current_request","food","water","cooking_status"] ## ,"time_since_served"
-		# add_variables = []
+		print ("augment POMDP")
+		# add_variables = ["current_request","food","water","cooking_status"] ## ,"time_since_served"
+		add_variables = []
 		self.transition_function = {}
 		possible_pomdp_tasks, valid_new_beliefs = self.get_all_possible_models (initial_belief, action, obs)
 		belief_mappings = []
@@ -1026,23 +1411,21 @@ class ClientPOMDP(gym.Env):
 				state = self.get_state_tuple(b[1])
 				for s in self.feature_indices.keys():
 					state_mapping[s] = state[self.feature_indices[s]]
-				print ("state: ", (b[0],state_mapping), "model: ", model)
+				# print ("state: ", (b[0],state_mapping), "model: ", model)
 				state_mappings.append((b[0], state_mapping))
 			model += 1
-
 			belief_mappings.append(state_mappings)
 
 
-		# self.add_hidden_variables(add_variables, Observation_Type.ORIGINAL)
-		# self.add_hidden_variables(add_variables, Observation_Type.HUMAN_INPUT)
-		self.add_model_transitions (possible_pomdp_tasks, add_variables)
+		parameter_vars = self.add_model_transitions (possible_pomdp_tasks, add_variables)
+		
 		for a in self.actions:
 			if a.name == action.name:
 				new_action = a
 				break
 		agent_pomdp.set_actions()		
 		agent_pomdp.set_states()
-		new_belief = self.get_new_belief (belief_mappings)
+		new_belief = self.get_new_belief (belief_mappings, parameter_vars)
 
 		# pick a random state
 		sum_prob = 0
@@ -1056,27 +1439,60 @@ class ClientPOMDP(gym.Env):
 
 		return new_belief
 
-	def get_new_belief (self, belief_mappings):
+	def get_new_belief (self, belief_mappings, parameter_vars):
 		new_belief = []
 		num_models = len(belief_mappings)
+		
+		new_state_tuple  = self.get_state_tuple(0)
+
+		for model in range(0,num_models):
+			start_index = self.feature_indices["m"+str(model)]+1
+			end_index = len(new_state_tuple)-2 ## excluding x and y
+			if model+1 < num_models:
+				end_index = self.feature_indices["m"+str(model+1)]
+
+			for m_f in range(start_index,end_index):
+				if (m_f-start_index)%2 == 0:
+					new_state_tuple[m_f] = 0
+				else:
+					new_state_tuple[m_f] = 1
+
+		initial_model = self.get_state_index(new_state_tuple)
+
 		model = 0
 		for state_mappings in belief_mappings:
 			for s_m in state_mappings:
 				prob = s_m[0]
 				state_mapping = s_m[1]
-				new_state_tuple  = self.get_state_tuple(0)
+				new_state_tuple  = self.get_state_tuple(initial_model)
 				for f in self.feature_indices.keys():
 					if f in state_mapping:
 						new_state_tuple[self.feature_indices[f]] = state_mapping[f]
 
 				prob *= (1.0/num_models)
 				new_state_tuple[self.feature_indices["m"+str(model)]] = 1
-				new_belief.append((prob,self.get_state_index(new_state_tuple)))
-				print ("state: ", (prob,new_state_tuple), "model: ", model)
-				new_state_tuple[self.feature_indices["m"+str(model)]] = 0
+
+				possible_pars = []
+				possible_pars_len = 1
+				possible_pars_dim = ()
+				for p in parameter_vars["m"+str(model)]:
+					possible_pars.append(p)
+					possible_pars_len *= 2
+					possible_pars_dim += (2,)
+
+				count = 0
+				prob *= (1.0/possible_pars_len)
+				while count < possible_pars_len:
+					pars = self.get_tuple(count,possible_pars_dim)
+					for var in range(len(possible_pars)):
+						new_state_tuple[self.feature_indices[possible_pars[var]]] = pars[var]
+
+					new_belief.append((prob,self.get_state_index(new_state_tuple)))
+					# print ("state: ", (prob,new_state_tuple), "model: ", model)
+					count += 1
 			model += 1
 
-		print ("new_belief", new_belief)
+		# print ("new_belief", new_belief)
 		# set_trace()
 
 		return new_belief
@@ -1107,3 +1523,82 @@ class ClientPOMDP(gym.Env):
 		state = np.unravel_index(index,dim)
 		new_state = list(state)
 		return new_state
+
+	def is_goal (self, belief):
+		for (prob,state_index) in belief.prob:
+			state = self.get_state_tuple(state_index)
+			if state [self.feature_indices['hand_raise']] == 1:
+				return False
+		return True
+	def is_goal_state (self, state_index):
+		state = self.get_state_tuple(state_index)
+		if state [self.feature_indices['hand_raise']] == 1:
+			return False
+		return True
+
+	def goal_pomdp_reward (self, reward):
+		if self.goal_pomdp:
+			if reward == -np.Inf:
+				return np.Inf
+			if reward == 100:
+				return 0
+		else:
+			return reward
+
+	def get_heuristic (self, belief):
+		rew = np.Inf
+		for (prob,state) in belief.prob:
+			start_state = self.get_state_tuple(state)
+			current_req = start_state [self.feature_indices['current_request']]
+			t_hand = int(self.state_space[self.feature_indices['time_since_hand_raise']][1]/3)
+			if current_req == 2:
+				steps = 8 - current_req + 2*t_hand + 2*t_hand + 2*t_hand
+			elif current_req == 3:
+				cooking_status = start_state [self.feature_indices['cooking_status']]
+				steps = 8 - current_req + (2-cooking_status)*t_hand + 2*t_hand + 2*t_hand
+			elif current_req == 4:
+				food = start_state [self.feature_indices['food']]
+				steps = 8 - current_req + (3-food)*t_hand + 2*t_hand
+			elif current_req == 5:
+				water = start_state [self.feature_indices['water']]
+				steps = 8 - current_req + (3-water)*t_hand
+			else:
+				steps = 8 - current_req
+				
+			rew = min(steps*ACTION_COST, rew)
+
+		return rew
+
+	def get_from_belief_library(self, belief, action, all_poss_actions):
+		rew_t_t = None
+		part_of_action_space = all_poss_actions
+		if part_of_action_space in self.belief_library.keys():
+			if belief in self.belief_library[part_of_action_space].keys():
+				rew_t_t = self.belief_library[part_of_action_space][belief]
+
+		if rew_t_t is None:
+			rew_t_t = self.get_heuristic(belief)
+
+		# if rew_found is not None and np.round(rew_found,2) != np.round(rew_t_t,2):
+		# 	if "kitchen" in action.name:
+		# 		print ("euqal: ")
+		# 		print (action.name)
+		# 		print (belief.get_string())
+		# 		print (self.get_state_tuple(belief.prob[0][1]))
+		# 		print (rew_found,rew_t_t)
+		# 		set_trace()
+		# 	# set_trace() 
+		# 	rew_t_t = rew_found
+		return rew_t_t
+
+	def add_to_belief_library(self, belief, cost, all_poss_actions):
+		part_of_action_space = all_poss_actions
+		if len(self.belief_library.keys()) == 0:
+			self.belief_library[True] = {}
+			self.belief_library[False] = {}
+
+		# if part_of_action_space in self.belief_library.keys():
+		# 	if belief in self.belief_library[part_of_action_space].keys():
+		# 		prev_cost = self.belief_library[part_of_action_space][belief]
+		# 		cost = np.min(prev_cost, cost)
+		self.belief_library[part_of_action_space][belief] = cost

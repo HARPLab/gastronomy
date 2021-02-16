@@ -827,6 +827,7 @@ class Table:
             self.goal_y = goals[self.id][1]
 
             # self.features.append(Feature("next_request", "discrete", False, 0, 8, 1, 0, observable=False, dependent=False))
+            self.features.append(Feature("have_bread", "discrete", False, 0, 1, 1, 0, observable=True, dependent=False)) 
             ## just started, half-ready, ready
             self.features.append(Feature("cooking_status", "discrete", False, 0, 2, 1, 0, observable=True, dependent=False))
             ## ready-hot, ready-almost-hot, ready-cold
@@ -850,6 +851,7 @@ class Table:
             
         else:
             # self.features.append(Feature("next_request", "discrete", False, 0, 8, 1, 0, observable=False, dependent=False))
+            self.features.append(Feature("have_bread", "discrete", False, 0, 1, 1, 0, observable=True, dependent=False)) 
             ## just started, half-ready, ready
             self.features.append(Feature("cooking_status", "discrete", False, 0, 2, 1, 0, observable=True, dependent=False))
             ## ready-hot, ready-almost-hot, ready-cold
@@ -906,7 +908,7 @@ class Restaurant:
         self.threads = list()
         self.num_tables = num_tables
 
-        MAX_TIME = 5 ##self.num_tables * 6
+        MAX_TIME = self.num_tables * 6
 
         self.robot = Robot(self)
         self.robot_thread = threading.Thread(target=self.robot.run, daemon=True, args=())
@@ -925,7 +927,7 @@ class Restaurant:
 
         print ("seed: ", seed, "#tables", self.num_tables, "horizon: ", horizon, "greedy: ", greedy, "simple: ", simple, \
             "model: ", model, "no_op: ", no_op, "hybrid: ", hybrid, "deterministic: ",deterministic, "hybrid_3T: ", hybrid_3T, \
-            "shani_baseline: ", shani_baseline, "hierarchical_baseline: ", hierarchical_baseline)
+            "shani_baseline: ", shani_baseline, "hierarchical_baseline: ", hierarchical_baseline, "run_on_robot: ", run_on_cobot)
         envs = POMDPTasks(self, list(self.robot.tasks),self.robot, seed, random, reset_random, horizon, greedy, simple, model, \
             no_op, run_on_cobot, hybrid, deterministic, hybrid_3T, shani_baseline, hierarchical_baseline)
 
