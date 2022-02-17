@@ -25,3 +25,6 @@
 [submodule "hri/restaurant_simulator"]
 	path = hri/restaurant_simulator
 	url = https://github.com/HARPLab/restaurant_simulator.git
+[submodule "sony-approach-study"]
+	path = sony-approach-study
+	url = https://github.com/HARPLab/sony-approach-study.git
