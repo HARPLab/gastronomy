@@ -28,3 +28,6 @@
 [submodule "sony-approach-study"]
 	path = sony-approach-study
 	url = https://github.com/HARPLab/sony-approach-study.git
+[submodule "hri/learning_skills_from_humans"]
+	path = hri/learning_skills_from_humans
+	url = https://github.com/Peej1818/learning_skills_from_humans.git
