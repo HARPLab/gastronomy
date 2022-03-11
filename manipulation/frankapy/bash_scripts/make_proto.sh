@@ -1,1 +1,0 @@
-protoc -I=frankapy/proto/ --python_out=frankapy/proto/ frankapy/proto/*.proto

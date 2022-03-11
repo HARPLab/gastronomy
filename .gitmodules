@@ -28,3 +28,15 @@
 [submodule "sony-approach-study"]
 	path = sony-approach-study
 	url = https://github.com/HARPLab/sony-approach-study.git
+[submodule "hri/learning_skills_from_humans"]
+	path = hri/learning_skills_from_humans
+	url = https://github.com/Peej1818/learning_skills_from_humans.git
+[submodule "manipulation/frankapy"]
+	path = manipulation/frankapy
+	url = https://github.com/iamlab-cmu/frankapy.git
+[submodule "manipulation/franka-interface"]
+	path = manipulation/franka-interface
+	url = https://github.com/iamlab-cmu/franka-interface.git
+[submodule "manipulation/iam-interface"]
+	path = manipulation/iam-interface
+	url = https://github.com/iamlab-cmu/iam-interface.git
