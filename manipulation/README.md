@@ -1,6 +1,6 @@
 # gastronomy/manipulation
 
-The manipulation repository consists of 7 packages.
+The manipulation repository consists of 11 packages.
 
 ## Franka-Interface and Frankapy
 
