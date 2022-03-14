@@ -43,3 +43,6 @@
 [submodule "perception/Visually-Grounded-Library-of-Behaviors"]
 	path = perception/Visually-Grounded-Library-of-Behaviors
 	url = https://github.com/YunchuZhang/Visually-Grounded-Library-of-Behaviors.git
+[submodule "perception/Learning-to-use-different-tools-for-objects-rearrangement"]
+	path = perception/Learning-to-use-different-tools-for-objects-rearrangement
+	url = https://github.com/YunchuZhang/Learning-to-use-different-tools-for-objects-rearrangement
